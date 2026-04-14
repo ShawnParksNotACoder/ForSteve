@@ -14,6 +14,7 @@ BASE_DIR = Path(__file__).resolve().parent
 KB_DIR = BASE_DIR / "knowledge_base"
 DOCS_PATH = KB_DIR / "docs.jsonl"
 ALIASES_PATH = KB_DIR / "aliases.json"
+IMAGES_DIR = KB_DIR / "images" / "DM14Q313" / "gm100"
 LOGO_PATH = BASE_DIR / "assets" / "ghost_rider.png"
 
 st.set_page_config(
@@ -26,20 +27,15 @@ st.set_page_config(
 # ── Global CSS ────────────────────────────────────────────────────────────────
 st.markdown("""
 <style>
-  /* Gloss black body */
   .stApp { background: #080808; }
-
-  /* Cyan headings */
   h1, h2, h3 { color: #00D4FF !important; letter-spacing: 0.04em; }
 
-  /* Result card: subtle cyan border, dark fill, rounder corners */
   [data-testid="stVerticalBlockBorderWrapper"] {
     border: 1px solid #00D4FF33 !important;
     background: #111111 !important;
     border-radius: 16px !important;
   }
 
-  /* Orange primary buttons — rounder */
   .stButton > button[kind="primary"],
   .stButton > button {
     background: #FF6A00 !important;
@@ -55,27 +51,14 @@ st.markdown("""
     box-shadow: 0 0 16px #FF6A0055;
   }
 
-  /* Cyan outline for expander summaries */
-  details > summary {
-    color: #00D4FF !important;
-    font-size: 0.85rem;
-  }
+  details > summary { color: #00D4FF !important; font-size: 0.85rem; }
 
-  /* Expander border — rounder */
   [data-testid="stExpander"] {
     border: 1px solid #00D4FF22 !important;
     border-radius: 12px !important;
     overflow: hidden;
   }
 
-  /* Score badge */
-  .score-badge {
-    color: #00D4FF;
-    font-size: 0.75rem;
-    font-family: monospace;
-  }
-
-  /* Text input — rounder, orange glow */
   .stTextInput > div > div > input {
     background: #141414 !important;
     border: 1px solid #FF6A0066 !important;
@@ -88,31 +71,57 @@ st.markdown("""
     box-shadow: 0 0 12px #FF6A0033 !important;
   }
 
-  /* Caption text */
-  .stCaption { color: #888 !important; }
+  /* Pills / filter chips */
+  [data-testid="stPills"] button {
+    border-radius: 20px !important;
+    border: 1px solid #FF6A0055 !important;
+    background: #141414 !important;
+    color: #E8E8E8 !important;
+    font-size: 0.8rem !important;
+  }
+  [data-testid="stPills"] button[aria-selected="true"] {
+    background: #FF6A00 !important;
+    color: #080808 !important;
+    border-color: #FF6A00 !important;
+  }
 
-  /* Divider */
+  /* Tabs */
+  [data-testid="stTabs"] button {
+    color: #888 !important;
+    font-family: monospace !important;
+    letter-spacing: 0.06em;
+  }
+  [data-testid="stTabs"] button[aria-selected="true"] {
+    color: #00D4FF !important;
+    border-bottom-color: #00D4FF !important;
+  }
+
+  /* Diagram images — pinch-zoomable on mobile */
+  [data-testid="stImage"] img {
+    border-radius: 10px;
+    border: 1px solid #00D4FF22;
+    touch-action: pinch-zoom;
+  }
+
+  .stCaption { color: #888 !important; }
   hr { border-color: #222 !important; }
 
-  /* Sidebar logo area */
   [data-testid="stSidebar"] {
     background: #0d0d0d !important;
     border-right: 1px solid #FF6A0033;
   }
 
-  /* Hide Streamlit branding */
   #MainMenu { visibility: hidden; }
   footer { visibility: hidden; }
 </style>
 """, unsafe_allow_html=True)
 
 
-# ── Splash screen ─────────────────────────────────────────────────────────────
+# ── Splash ────────────────────────────────────────────────────────────────────
 if "splash_dismissed" not in st.session_state:
     st.session_state.splash_dismissed = False
 
 if not st.session_state.splash_dismissed:
-    # Build image tag — base64 embed so it sits inside the glass card HTML
     if LOGO_PATH.exists():
         img_b64 = base64.b64encode(LOGO_PATH.read_bytes()).decode()
         img_tag = (
@@ -129,49 +138,27 @@ if not st.session_state.splash_dismissed:
 
     st.markdown(f"""
     <style>
-      /* Splash: amber glow at bottom to give the glass something to catch */
       .stApp {{
         background: radial-gradient(ellipse at 50% 90%,
           rgba(255,100,0,0.18) 0%, #080808 55%) !important;
       }}
     </style>
-    <div style="
-      min-height:70vh;
-      display:flex;
-      flex-direction:column;
-      align-items:center;
-      justify-content:center;
-      padding:2rem 1rem;
-    ">
-      <!-- Glass card -->
-      <div style="
-        max-width:460px;
-        width:100%;
-        background:linear-gradient(145deg,
-          rgba(255,255,255,0.09) 0%,
-          rgba(255,255,255,0.03) 100%);
-        backdrop-filter:blur(28px);
-        -webkit-backdrop-filter:blur(28px);
+    <div style="min-height:70vh; display:flex; flex-direction:column;
+                align-items:center; justify-content:center; padding:2rem 1rem;">
+      <div style="max-width:460px; width:100%;
+        background:linear-gradient(145deg,rgba(255,255,255,0.09) 0%,rgba(255,255,255,0.03) 100%);
+        backdrop-filter:blur(28px); -webkit-backdrop-filter:blur(28px);
         border:1px solid rgba(255,255,255,0.13);
         border-top:1px solid rgba(255,255,255,0.22);
         border-left:1px solid rgba(255,255,255,0.16);
         border-radius:28px;
-        box-shadow:
-          0 24px 56px rgba(0,0,0,0.75),
-          0 8px 20px rgba(0,0,0,0.5),
-          inset 0 1px 0 rgba(255,255,255,0.12),
-          0 0 80px rgba(255,100,0,0.10);
-        padding:1.75rem 1.75rem 1.25rem;
-        text-align:center;
-      ">
+        box-shadow:0 24px 56px rgba(0,0,0,0.75),0 8px 20px rgba(0,0,0,0.5),
+          inset 0 1px 0 rgba(255,255,255,0.12),0 0 80px rgba(255,100,0,0.10);
+        padding:1.75rem 1.75rem 1.25rem; text-align:center;">
         {img_tag}
-        <p style="
-          color:#00D4FF;
-          font-family:monospace;
-          font-size:0.78rem;
-          letter-spacing:0.18em;
-          margin:1rem 0 0.25rem;
-        ">1984 BUICK GRAND NATIONAL</p>
+        <p style="color:#00D4FF; font-family:monospace; font-size:0.78rem;
+                  letter-spacing:0.18em; margin:1rem 0 0.25rem;">
+          1984 BUICK GRAND NATIONAL</p>
       </div>
     </div>
     """, unsafe_allow_html=True)
@@ -181,7 +168,6 @@ if not st.session_state.splash_dismissed:
         if st.button("🔧  Enter the Shop", use_container_width=True, type="primary"):
             st.session_state.splash_dismissed = True
             st.rerun()
-
     st.markdown(
         "<p style='text-align:center; color:#333; font-size:0.7rem;"
         " font-family:monospace; margin-top:1.5rem;'>"
@@ -219,6 +205,12 @@ def clean_for_display(text: str) -> str:
     return text.strip()
 
 
+def extract_image_paths(text: str) -> list[Path]:
+    """Resolve all PNG references in doc body to local file paths."""
+    filenames = re.findall(r"!\[.*?\]\([^)]*?/([^/\s]+\.png)\)", text)
+    return [IMAGES_DIR / fn for fn in filenames if (IMAGES_DIR / fn).exists()]
+
+
 # ── Knowledge base ────────────────────────────────────────────────────────────
 
 @st.cache_resource(show_spinner="Loading shop manual…")
@@ -235,15 +227,19 @@ def load_knowledge_base():
         body = strip_frontmatter(content)
         title = fm.get("title") or doc.get("filename", "Untitled")
         keywords = fm.get("keywords") or []
+        system = fm.get("system", "")
+        img_paths = extract_image_paths(body)
         search_text = " ".join([title] + keywords + [body])
         records.append({
             "path": doc["path"],
             "title": title,
             "keywords": keywords,
             "category": fm.get("category", ""),
-            "system": fm.get("system", ""),
+            "system": system,
             "body": body,
             "search_text": search_text,
+            "has_images": len(img_paths) > 0,
+            "image_paths": [str(p) for p in img_paths],
         })
 
     texts = [r["search_text"] for r in records]
@@ -261,20 +257,47 @@ def expand_query(query: str, aliases: dict) -> str:
     return " ".join(parts)
 
 
-def do_search(query: str, records, vec, matrix, aliases, top_k: int = 8):
+def do_search(query: str, records, vec, matrix, aliases,
+              system_filter: str | None = None, top_k: int = 10):
     expanded = expand_query(query, aliases)
     q_vec = vec.transform([expanded])
     sims = cosine_similarity(q_vec, matrix).flatten()
     ranked = sorted(zip(sims, records), key=lambda x: x[0], reverse=True)
-    return [(s, d) for s, d in ranked[:top_k] if s > 0.01]
+    hits = [(s, d) for s, d in ranked if s > 0.01]
+    if system_filter:
+        hits = [(s, d) for s, d in hits if d["system"] == system_filter]
+    return hits[:top_k]
 
+
+# ── Constants ─────────────────────────────────────────────────────────────────
 
 CATEGORY_BADGE = {
     "technical-service-bulletins": ("🟡", "TSB"),
     "specifications":              ("🟢", "Specs"),
     "service-and-repair":          ("🔵", "Service & Repair"),
-    "repair-and-diagnosis":        ("🔴", "Repair & Diagnosis"),
+    "repair-and-diagnosis":        ("🔴", "Repair & Diag"),
     "maintenance":                 ("🟠", "Maintenance"),
+}
+
+SYSTEM_FILTER_OPTIONS = [
+    ("All",          None),
+    ("Electrical",   "starting-and-charging"),
+    ("Transmission", "transmission-and-drivetrain"),
+    ("Suspension",   "steering-and-suspension"),
+    ("Specs",        "specifications"),
+    ("TSBs",         "technical-service-bulletins"),
+    ("Sensors",      "sensors-and-switches"),
+]
+SYSTEM_FILTER_LABELS = [label for label, _ in SYSTEM_FILTER_OPTIONS]
+SYSTEM_FILTER_MAP   = {label: val for label, val in SYSTEM_FILTER_OPTIONS}
+
+DIAGRAM_SYSTEMS = {
+    "All Diagrams":  None,
+    "Electrical":    "starting-and-charging",
+    "Transmission":  "transmission-and-drivetrain",
+    "Suspension":    "steering-and-suspension",
+    "Sensors":       "sensors-and-switches",
+    "Wipers/Windows":"wiper-and-washer-systems",
 }
 
 QUICK_QUERIES = [
@@ -304,7 +327,7 @@ POPULAR = [
 records, vec, matrix, aliases = load_knowledge_base()
 
 
-# ── Sidebar (mini logo + nav) ─────────────────────────────────────────────────
+# ── Sidebar ───────────────────────────────────────────────────────────────────
 with st.sidebar:
     if LOGO_PATH.exists():
         st.image(str(LOGO_PATH), width=180)
@@ -320,9 +343,12 @@ with st.sidebar:
         unsafe_allow_html=True,
     )
     st.markdown("---")
+    img_count = sum(1 for r in records if r["has_images"])
     st.markdown(
-        "<p style='color:#888; font-size:0.75rem;'>3,266 manual pages indexed.<br>"
-        "1984 Buick Regal 3.8L Turbo V6</p>",
+        f"<p style='color:#888; font-size:0.75rem;'>"
+        f"3,266 manual pages<br>"
+        f"{img_count:,} pages with diagrams<br>"
+        f"1984 Buick Regal 3.8L Turbo V6</p>",
         unsafe_allow_html=True,
     )
     st.markdown("---")
@@ -337,105 +363,187 @@ with st.sidebar:
 st.markdown(
     "<h1 style='text-align:center; font-size:1.6rem; letter-spacing:0.12em;'>"
     "👻 GHOST RIDER</h1>"
-    "<p style='text-align:center; color:#888; font-size:0.78rem; "
-    "font-family:monospace; letter-spacing:0.08em; margin-top:-0.8rem;'>"
+    "<p style='text-align:center; color:#888; font-size:0.78rem;"
+    " font-family:monospace; letter-spacing:0.08em; margin-top:-0.8rem;'>"
     "1984 BUICK GRAND NATIONAL · SHOP MANUAL</p>",
     unsafe_allow_html=True,
 )
 
 st.markdown("---")
 
-# Quick diagnostic shortcuts
-with st.expander("⚡ Quick diagnostic searches", expanded=False):
-    cols = st.columns(2)
-    for i, (label, term) in enumerate(QUICK_QUERIES):
-        if cols[i % 2].button(label, key=f"quick_{i}", use_container_width=True):
-            st.session_state["_query"] = term
+# ── Tabs ──────────────────────────────────────────────────────────────────────
+tab_search, tab_diagrams = st.tabs(["🔍  Search", "📐  Diagrams"])
 
-# Search box
-default_query = st.session_state.pop("_query", "")
-query = st.text_input(
-    "search",
-    value=default_query,
-    placeholder="e.g.  spark plug gap · boost pressure · fuel pump · timing",
-    label_visibility="collapsed",
-)
 
-st.markdown("---")
+# ════════════════════════════════════════════════════════════════════════════
+# SEARCH TAB
+# ════════════════════════════════════════════════════════════════════════════
+with tab_search:
+    with st.expander("⚡ Quick diagnostic searches", expanded=False):
+        cols = st.columns(2)
+        for i, (label, term) in enumerate(QUICK_QUERIES):
+            if cols[i % 2].button(label, key=f"quick_{i}", use_container_width=True):
+                st.session_state["_query"] = term
 
-# ── Results ───────────────────────────────────────────────────────────────────
-if query:
-    hits = do_search(query, records, vec, matrix, aliases, top_k=8)
+    default_query = st.session_state.pop("_query", "")
+    query = st.text_input(
+        "search",
+        value=default_query,
+        placeholder="e.g.  spark plug gap · boost pressure · fuel pump · timing",
+        label_visibility="collapsed",
+    )
 
-    if not hits:
-        st.warning("No results. Try different keywords.")
+    # System filter pills
+    selected_filter = st.pills(
+        "Filter",
+        options=SYSTEM_FILTER_LABELS,
+        default="All",
+        label_visibility="collapsed",
+    )
+    system_filter = SYSTEM_FILTER_MAP.get(selected_filter)
+
+    st.markdown("---")
+
+    if query:
+        hits = do_search(query, records, vec, matrix, aliases,
+                         system_filter=system_filter, top_k=10)
+
+        if not hits:
+            st.warning("No results. Try different keywords or clear the filter.")
+        else:
+            st.markdown(
+                f"<p style='color:#888; font-size:0.8rem; font-family:monospace;'>"
+                f"{len(hits)} results for: <span style='color:#00D4FF;'>{query}</span></p>",
+                unsafe_allow_html=True,
+            )
+
+            for score, doc in hits:
+                icon, badge_label = CATEGORY_BADGE.get(doc["system"],
+                    CATEGORY_BADGE.get(doc["category"], ("📄", "Manual")))
+                system_label = doc["system"].replace("-", " ").title()
+                img_paths = [Path(p) for p in doc["image_paths"]]
+
+                with st.container(border=True):
+                    col_title, col_score = st.columns([5, 1])
+                    with col_title:
+                        st.markdown(
+                            f"<p style='color:#00D4FF; font-size:1rem; font-weight:700;"
+                            f" margin-bottom:0; font-family:monospace;'>{doc['title']}</p>",
+                            unsafe_allow_html=True,
+                        )
+                        st.markdown(
+                            f"<p style='color:#FF6A00; font-size:0.72rem; margin-top:0;"
+                            f" font-family:monospace;'>{icon} {system_label}</p>",
+                            unsafe_allow_html=True,
+                        )
+                    with col_score:
+                        st.markdown(
+                            f"<p style='color:#00D4FF; font-size:0.75rem; font-family:monospace;"
+                            f" text-align:right; margin-top:0.3rem;'>{score:.2f}</p>",
+                            unsafe_allow_html=True,
+                        )
+
+                    body_clean = clean_for_display(doc["body"])
+                    PREVIEW = 400
+                    if len(body_clean) <= PREVIEW:
+                        st.markdown(body_clean)
+                    else:
+                        break_at = body_clean.rfind("\n", 0, PREVIEW)
+                        if break_at < 100:
+                            break_at = body_clean.rfind(" ", 0, PREVIEW)
+                        if break_at < 0:
+                            break_at = PREVIEW
+                        st.markdown(body_clean[:break_at].strip() + "…")
+                        with st.expander("Read more ↓"):
+                            st.markdown(body_clean[break_at:].strip())
+
+                    # Show diagrams inline (cap at 3 per result)
+                    if img_paths:
+                        with st.expander(f"📐 Diagrams ({len(img_paths)})", expanded=False):
+                            for p in img_paths[:3]:
+                                st.image(str(p), use_container_width=True)
+                            if len(img_paths) > 3:
+                                st.caption(f"+ {len(img_paths) - 3} more diagrams in full document.")
+
     else:
         st.markdown(
-            f"<p style='color:#888; font-size:0.8rem; font-family:monospace;'>"
-            f"{len(hits)} results for: <span style='color:#00D4FF;'>{query}</span></p>",
+            "<p style='color:#888; font-size:0.85rem;'>"
+            "Full repair reference for the Grand National platform. Search above "
+            "or tap a shortcut below.</p>",
             unsafe_allow_html=True,
         )
+        st.markdown("#### Popular searches")
+        col1, col2 = st.columns(2)
+        for i, (label, term) in enumerate(POPULAR):
+            col = col1 if i % 2 == 0 else col2
+            if col.button(label, key=f"pop_{i}", use_container_width=True):
+                st.session_state["_query"] = term
+                st.rerun()
 
-        for score, doc in hits:
-            icon, label = CATEGORY_BADGE.get(doc["category"], ("📄", "Manual"))
-            system_label = doc["system"].replace("-", " ").title()
 
-            with st.container(border=True):
-                col_title, col_score = st.columns([5, 1])
-                with col_title:
-                    st.markdown(
-                        f"<p style='color:#00D4FF; font-size:1rem; font-weight:700;"
-                        f" margin-bottom:0; font-family:monospace;'>{doc['title']}</p>",
-                        unsafe_allow_html=True,
-                    )
-                    st.markdown(
-                        f"<p style='color:#FF6A00; font-size:0.72rem; margin-top:0;"
-                        f" font-family:monospace;'>{icon} {label}"
-                        + (f"  ·  {system_label}" if system_label else "")
-                        + "</p>",
-                        unsafe_allow_html=True,
-                    )
-                with col_score:
-                    st.markdown(
-                        f"<p class='score-badge' style='text-align:right;"
-                        f" margin-top:0.3rem;'>{score:.2f}</p>",
-                        unsafe_allow_html=True,
-                    )
-
-                body_clean = clean_for_display(doc["body"])
-                PREVIEW = 500
-
-                if len(body_clean) <= PREVIEW:
-                    # Short doc — show everything, no expander needed
-                    st.markdown(body_clean)
-                else:
-                    # Break at nearest newline before PREVIEW chars
-                    break_at = body_clean.rfind("\n", 0, PREVIEW)
-                    if break_at < 150:
-                        break_at = body_clean.rfind(" ", 0, PREVIEW)
-                    if break_at < 0:
-                        break_at = PREVIEW
-
-                    st.markdown(body_clean[:break_at].strip() + "…")
-
-                    with st.expander("Read more ↓"):
-                        st.markdown(body_clean[break_at:].strip())
-
-# ── Home screen ───────────────────────────────────────────────────────────────
-else:
+# ════════════════════════════════════════════════════════════════════════════
+# DIAGRAMS TAB
+# ════════════════════════════════════════════════════════════════════════════
+with tab_diagrams:
     st.markdown(
         "<p style='color:#888; font-size:0.85rem;'>"
-        "Full repair reference for the Grand National platform. Search above "
-        "or tap a shortcut below.</p>",
+        "Browse wiring diagrams, component locations, and schematics by system.</p>",
         unsafe_allow_html=True,
     )
-    st.markdown("#### Popular searches")
-    col1, col2 = st.columns(2)
-    for i, (label, term) in enumerate(POPULAR):
-        col = col1 if i % 2 == 0 else col2
-        if col.button(label, key=f"pop_{i}", use_container_width=True):
-            st.session_state["_query"] = term
-            st.rerun()
+
+    diag_system = st.selectbox(
+        "System",
+        options=list(DIAGRAM_SYSTEMS.keys()),
+        label_visibility="collapsed",
+    )
+    selected_sys = DIAGRAM_SYSTEMS[diag_system]
+
+    # Filter to docs that have images, optionally by system
+    diagram_docs = [
+        r for r in records
+        if r["has_images"] and (selected_sys is None or r["system"] == selected_sys)
+    ]
+
+    # Further filter to docs with "diagram" in path (actual diagram pages first),
+    # then fall back to any doc with images
+    explicit_diagrams = [d for d in diagram_docs if "diagram" in d["path"]]
+    other_with_images = [d for d in diagram_docs if "diagram" not in d["path"]]
+    ordered = explicit_diagrams + other_with_images
+
+    st.markdown(
+        f"<p style='color:#888; font-size:0.78rem; font-family:monospace;'>"
+        f"{len(ordered)} pages with diagrams</p>",
+        unsafe_allow_html=True,
+    )
+    st.markdown("---")
+
+    if not ordered:
+        st.info("No diagrams found for this system.")
+    else:
+        for doc in ordered[:60]:   # cap for performance
+            img_paths = [Path(p) for p in doc["image_paths"]]
+            if not img_paths:
+                continue
+            system_label = doc["system"].replace("-", " ").title()
+            with st.container(border=True):
+                st.markdown(
+                    f"<p style='color:#00D4FF; font-size:0.95rem; font-weight:700;"
+                    f" margin-bottom:0; font-family:monospace;'>{doc['title']}</p>"
+                    f"<p style='color:#FF6A00; font-size:0.7rem; margin-top:0;"
+                    f" font-family:monospace;'>{system_label}</p>",
+                    unsafe_allow_html=True,
+                )
+                # Show first image always — full width for mobile readability
+                st.image(str(img_paths[0]), use_container_width=True)
+
+                # Remaining images + text in expander
+                if len(img_paths) > 1 or clean_for_display(doc["body"]).strip():
+                    with st.expander("More ↓"):
+                        for p in img_paths[1:]:
+                            st.image(str(p), use_container_width=True)
+                        body_clean = clean_for_display(doc["body"])
+                        if body_clean:
+                            st.markdown(body_clean)
 
 st.markdown("---")
 st.markdown(

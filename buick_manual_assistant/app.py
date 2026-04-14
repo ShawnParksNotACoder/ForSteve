@@ -27,8 +27,24 @@ st.set_page_config(
 # ── Global CSS ────────────────────────────────────────────────────────────────
 st.markdown("""
 <style>
-  /* ── App base ────────────────────────────────────────────────────── */
-  .stApp { background: #080808; }
+  /* ── App base — animated flame background via static serving ─────── */
+  body {
+    background-color: #080808;
+    background-image: url('/app/static/ghost_rider_flames_animated_5s.gif');
+    background-size: cover;
+    background-position: center top;
+    background-repeat: no-repeat;
+  }
+  /* Gradient overlay: 50% transparent at top → fully opaque at 85% */
+  .stApp {
+    background: linear-gradient(to bottom,
+      rgba(8,8,8,0.50) 0%,
+      rgba(8,8,8,0.50) 50%,
+      rgba(8,8,8,0.88) 72%,
+      rgba(8,8,8,1.00) 85%
+    ) !important;
+    min-height: 100vh !important;
+  }
   h1, h2, h3 { color: #00D4FF !important; letter-spacing: 0.04em; }
 
   /* ── Responsive layout ───────────────────────────────────────────── */
@@ -235,40 +251,23 @@ if "splash_dismissed" not in st.session_state:
     st.session_state.splash_dismissed = False
 
 if not st.session_state.splash_dismissed:
-    if LOGO_PATH.exists():
-        img_b64 = base64.b64encode(LOGO_PATH.read_bytes()).decode()
-        img_tag = (
-            f'<img src="data:image/png;base64,{img_b64}" '
-            f'style="width:100%; border-radius:16px; display:block;">'
-        )
-    else:
-        img_tag = (
-            "<p style='font-size:3rem; font-weight:900; font-family:Georgia;"
-            " background:linear-gradient(90deg,#FF6A00,#FFB347,#FF6A00);"
-            " -webkit-background-clip:text; -webkit-text-fill-color:transparent;"
-            " letter-spacing:0.08em; margin:1rem 0;'>GHOST RIDER</p>"
-        )
-
-    st.markdown(f"""
-    <style>
-      .stApp {{
-        background: radial-gradient(ellipse at 50% 90%,
-          rgba(255,100,0,0.18) 0%, #080808 55%) !important;
-      }}
-    </style>
+    # Flames GIF shows through via the body/gradient CSS already in place.
+    # Glass card floats on top; smooth GIF served via Streamlit static files.
+    st.markdown("""
     <div style="min-height:70vh; display:flex; flex-direction:column;
                 align-items:center; justify-content:center; padding:2rem 1rem;">
       <div style="max-width:460px; width:100%;
-        background:linear-gradient(145deg,rgba(255,255,255,0.09) 0%,rgba(255,255,255,0.03) 100%);
-        backdrop-filter:blur(28px); -webkit-backdrop-filter:blur(28px);
+        background:linear-gradient(145deg,rgba(255,255,255,0.08) 0%,rgba(255,255,255,0.02) 100%);
+        backdrop-filter:blur(32px); -webkit-backdrop-filter:blur(32px);
         border:1px solid rgba(255,255,255,0.13);
         border-top:1px solid rgba(255,255,255,0.22);
         border-left:1px solid rgba(255,255,255,0.16);
         border-radius:28px;
         box-shadow:0 24px 56px rgba(0,0,0,0.75),0 8px 20px rgba(0,0,0,0.5),
-          inset 0 1px 0 rgba(255,255,255,0.12),0 0 80px rgba(255,100,0,0.10);
+          inset 0 1px 0 rgba(255,255,255,0.12),0 0 80px rgba(255,100,0,0.12);
         padding:1.75rem 1.75rem 1.25rem; text-align:center;">
-        {img_tag}
+        <img src="/app/static/ghost_rider_smooth.gif"
+             style="width:100%; border-radius:16px; display:block;">
         <p style="color:#00D4FF; font-family:monospace; font-size:0.78rem;
                   letter-spacing:0.18em; margin:1rem 0 0.25rem;">
           1984 BUICK GRAND NATIONAL</p>

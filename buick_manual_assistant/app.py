@@ -39,7 +39,7 @@ st.markdown("""
   .stButton > button[kind="primary"],
   .stButton > button {
     background: #FF6A00 !important;
-    color: #080808 !important;
+    color: #FFFFFF !important;
     font-weight: 700 !important;
     border: none !important;
     border-radius: 12px !important;
@@ -48,6 +48,7 @@ st.markdown("""
   }
   .stButton > button:hover {
     background: #FF8C00 !important;
+    color: #FFFFFF !important;
     box-shadow: 0 0 16px #FF6A0055;
   }
 
@@ -292,12 +293,20 @@ SYSTEM_FILTER_LABELS = [label for label, _ in SYSTEM_FILTER_OPTIONS]
 SYSTEM_FILTER_MAP   = {label: val for label, val in SYSTEM_FILTER_OPTIONS}
 
 DIAGRAM_SYSTEMS = {
-    "All Diagrams":  None,
-    "Electrical":    "starting-and-charging",
-    "Transmission":  "transmission-and-drivetrain",
-    "Suspension":    "steering-and-suspension",
-    "Sensors":       "sensors-and-switches",
-    "Wipers/Windows":"wiper-and-washer-systems",
+    "All Diagrams":   None,
+    "Electrical":     "starting-and-charging",
+    "Transmission":   "transmission-and-drivetrain",
+    "Suspension":     "steering-and-suspension",
+    "Sensors":        "sensors-and-switches",
+    "Wipers/Windows": "wiper-and-washer-systems",
+}
+
+SPEC_SUBCATS = {
+    "⚙️  Mechanical":           "mechanical-specifications",
+    "⚡  Electrical":            "electrical-specifications",
+    "🧪  Capacities":            "capacity-specifications",
+    "🌡️  Pressure & Temp":      "pressure-vacuum-and-temperature-specifications",
+    "💧  Fluid Types":           "fluid-type-specifications",
 }
 
 QUICK_QUERIES = [
@@ -372,7 +381,13 @@ st.markdown(
 st.markdown("---")
 
 # ── Tabs ──────────────────────────────────────────────────────────────────────
-tab_search, tab_diagrams = st.tabs(["🔍  Search", "📐  Diagrams"])
+tab_search, tab_diagrams, tab_specs, tab_codes, tab_tsbs = st.tabs([
+    "🔍  Search",
+    "📐  Diagrams",
+    "📋  Specs",
+    "⚠️  Codes",
+    "📣  TSBs",
+])
 
 
 # ════════════════════════════════════════════════════════════════════════════
@@ -393,7 +408,12 @@ with tab_search:
         label_visibility="collapsed",
     )
 
-    # System filter pills
+    # System filter pills with label
+    st.markdown(
+        "<p style='color:#888; font-size:0.75rem; font-family:monospace;"
+        " letter-spacing:0.1em; margin-bottom:0.2rem;'>FILTER:</p>",
+        unsafe_allow_html=True,
+    )
     selected_filter = st.pills(
         "Filter",
         options=SYSTEM_FILTER_LABELS,
@@ -545,6 +565,187 @@ with tab_diagrams:
                         if body_clean:
                             st.markdown(body_clean)
 
+# ════════════════════════════════════════════════════════════════════════════
+# SPECS TAB
+# ════════════════════════════════════════════════════════════════════════════
+with tab_specs:
+    st.markdown(
+        "<p style='color:#888; font-size:0.85rem;'>"
+        "Factory specifications grouped by type. Expand a category to browse all docs.</p>",
+        unsafe_allow_html=True,
+    )
+    st.markdown("---")
+
+    for section_label, subcat_key in SPEC_SUBCATS.items():
+        section_docs = [
+            r for r in records
+            if r["system"] == "specifications"
+            and subcat_key in r["path"]
+        ]
+        if not section_docs:
+            continue
+
+        with st.expander(f"{section_label}  ·  {len(section_docs)} docs", expanded=False):
+            for doc in section_docs:
+                body_clean = clean_for_display(doc["body"])
+                img_paths = [Path(p) for p in doc["image_paths"]]
+                with st.container(border=True):
+                    st.markdown(
+                        f"<p style='color:#00D4FF; font-size:0.95rem; font-weight:700;"
+                        f" margin-bottom:0; font-family:monospace;'>{doc['title']}</p>",
+                        unsafe_allow_html=True,
+                    )
+                    # Show images if present (specs often have tables as images)
+                    for p in img_paths[:2]:
+                        st.image(str(p), use_container_width=True)
+                    if body_clean:
+                        SPEC_PREVIEW = 300
+                        if len(body_clean) <= SPEC_PREVIEW:
+                            st.markdown(body_clean)
+                        else:
+                            break_at = body_clean.rfind("\n", 0, SPEC_PREVIEW)
+                            if break_at < 50:
+                                break_at = SPEC_PREVIEW
+                            st.markdown(body_clean[:break_at].strip() + "…")
+                            with st.expander("Full spec ↓"):
+                                st.markdown(body_clean[break_at:].strip())
+                                for p in img_paths[2:]:
+                                    st.image(str(p), use_container_width=True)
+
+
+# ════════════════════════════════════════════════════════════════════════════
+# CODES TAB
+# ════════════════════════════════════════════════════════════════════════════
+with tab_codes:
+    st.markdown(
+        "<p style='color:#888; font-size:0.85rem;'>"
+        "Diagnostic Trouble Codes (DTCs) and MIL-related service information.</p>",
+        unsafe_allow_html=True,
+    )
+    st.markdown("---")
+
+    # Collect code docs — deduplicate by title
+    seen_titles: set[str] = set()
+    code_docs = []
+    for r in records:
+        path_lower = r["path"].lower()
+        title_lower = r["title"].lower()
+        if (
+            "diagnostic-trouble-code" in path_lower
+            or "dtc" in path_lower
+            or "/dtc" in path_lower
+            or "trouble-code" in path_lower
+            or "dtc" in title_lower
+            or "trouble code" in title_lower
+            or "mil " in title_lower
+        ):
+            if r["title"] not in seen_titles:
+                seen_titles.add(r["title"])
+                code_docs.append(r)
+
+    if not code_docs:
+        st.info("No trouble code documents found.")
+    else:
+        st.markdown(
+            f"<p style='color:#888; font-size:0.78rem; font-family:monospace;'>"
+            f"{len(code_docs)} code-related documents</p>",
+            unsafe_allow_html=True,
+        )
+        for doc in code_docs:
+            body_clean = clean_for_display(doc["body"])
+            img_paths = [Path(p) for p in doc["image_paths"]]
+            with st.container(border=True):
+                st.markdown(
+                    f"<p style='color:#00D4FF; font-size:0.95rem; font-weight:700;"
+                    f" margin-bottom:0; font-family:monospace;'>{doc['title']}</p>",
+                    unsafe_allow_html=True,
+                )
+                for p in img_paths[:2]:
+                    st.image(str(p), use_container_width=True)
+                if body_clean:
+                    PREVIEW = 400
+                    if len(body_clean) <= PREVIEW:
+                        st.markdown(body_clean)
+                    else:
+                        break_at = body_clean.rfind("\n", 0, PREVIEW)
+                        if break_at < 50:
+                            break_at = PREVIEW
+                        st.markdown(body_clean[:break_at].strip() + "…")
+                        with st.expander("Full doc ↓"):
+                            st.markdown(body_clean[break_at:].strip())
+                            for p in img_paths[2:]:
+                                st.image(str(p), use_container_width=True)
+
+
+# ════════════════════════════════════════════════════════════════════════════
+# TSBs TAB
+# ════════════════════════════════════════════════════════════════════════════
+with tab_tsbs:
+    st.markdown(
+        "<p style='color:#888; font-size:0.85rem;'>"
+        "Technical Service Bulletins. Search by keyword or browse all.</p>",
+        unsafe_allow_html=True,
+    )
+
+    tsb_search = st.text_input(
+        "Filter TSBs",
+        placeholder="e.g.  A/C · ignition · fuel · brakes",
+        label_visibility="collapsed",
+        key="tsb_search",
+    )
+    st.markdown("---")
+
+    tsb_docs = [r for r in records if r["system"] == "technical-service-bulletins"]
+
+    # Deduplicate by title
+    seen: set[str] = set()
+    unique_tsbs = []
+    for r in tsb_docs:
+        if r["title"] not in seen:
+            seen.add(r["title"])
+            unique_tsbs.append(r)
+
+    if tsb_search:
+        q = tsb_search.lower()
+        unique_tsbs = [r for r in unique_tsbs
+                       if q in r["title"].lower() or q in r["body"].lower()]
+
+    st.markdown(
+        f"<p style='color:#888; font-size:0.78rem; font-family:monospace;'>"
+        f"{len(unique_tsbs)} bulletins</p>",
+        unsafe_allow_html=True,
+    )
+
+    for doc in unique_tsbs[:80]:   # cap for performance
+        body_clean = clean_for_display(doc["body"])
+        img_paths = [Path(p) for p in doc["image_paths"]]
+        with st.container(border=True):
+            st.markdown(
+                f"<p style='color:#00D4FF; font-size:0.9rem; font-weight:700;"
+                f" margin-bottom:0; font-family:monospace;'>{doc['title']}</p>",
+                unsafe_allow_html=True,
+            )
+            for p in img_paths[:1]:
+                st.image(str(p), use_container_width=True)
+            if body_clean:
+                PREVIEW = 350
+                if len(body_clean) <= PREVIEW:
+                    st.markdown(body_clean)
+                else:
+                    break_at = body_clean.rfind("\n", 0, PREVIEW)
+                    if break_at < 50:
+                        break_at = PREVIEW
+                    st.markdown(body_clean[:break_at].strip() + "…")
+                    with st.expander("Read full bulletin ↓"):
+                        st.markdown(body_clean[break_at:].strip())
+                        for p in img_paths[1:]:
+                            st.image(str(p), use_container_width=True)
+
+    if len(unique_tsbs) > 80:
+        st.caption(f"Showing 80 of {len(unique_tsbs)}. Use the search box to narrow results.")
+
+
+# ── Footer ────────────────────────────────────────────────────────────────────
 st.markdown("---")
 st.markdown(
     "<p style='text-align:center; color:#333; font-size:0.7rem; font-family:monospace;'>"

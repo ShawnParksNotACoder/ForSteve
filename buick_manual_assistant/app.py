@@ -21,7 +21,7 @@ SMOOTH_GIF_PATH = BASE_DIR / "static" / "ghost_rider_smooth.gif"
 st.set_page_config(
     page_title="Ghost Rider — GN Shop Manual",
     page_icon="🔧",
-    layout="wide",
+    layout="centered",
     initial_sidebar_state="collapsed",
 )
 
@@ -50,33 +50,13 @@ st.markdown("""
   }
   h1, h2, h3 { color: #00D4FF !important; letter-spacing: 0.04em; }
 
-  /* ── Responsive layout / centering ──────────────────────────────── */
-  /* 1. Strip padding from the outer main wrapper */
-  [data-testid="stMain"],
-  section.main,
-  .main {
-    padding: 0 !important;
-    width: 100% !important;
-  }
-  /* 2. Constrain + center the block container (all known Streamlit selectors) */
-  [data-testid="stMainBlockContainer"],
-  [data-testid="stAppViewBlockContainer"],
-  .stMainBlockContainer,
-  .main .block-container,
+  /* ── Responsive layout — centered layout, widened ───────────────── */
   div.block-container {
     max-width: 900px !important;
-    width: 100% !important;
-    margin-left: auto !important;
-    margin-right: auto !important;
     padding: 1rem 2rem 3rem !important;
-    box-sizing: border-box !important;
   }
-  /* 3. Tab panels — no extra offset */
   [role="tabpanel"] { padding: 0 !important; }
   @media (max-width: 768px) {
-    [data-testid="stMainBlockContainer"],
-    [data-testid="stAppViewBlockContainer"],
-    .main .block-container,
     div.block-container {
       max-width: 100% !important;
       padding: 0.75rem 0.75rem 2rem !important;

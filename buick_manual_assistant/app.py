@@ -28,25 +28,28 @@ st.set_page_config(
 # ── Global CSS ────────────────────────────────────────────────────────────────
 st.markdown("""
 <style>
-  /* ── App base — animated flame background via static serving ─────── */
-  html, body {
-    background-color: #080808 !important;
-    background-image: url('/app/static/ghost_rider_flames_animated_5s.gif') !important;
-    background-size: 100% auto !important;   /* fill full width, height proportional */
-    background-position: top center !important;
-    background-repeat: no-repeat !important;
-    background-attachment: scroll !important;
-  }
-  /* Gradient overlay: 50% transparent at top fades to fully opaque at 85% */
+  /* ── App base — animated flame background ────────────────────────── */
+  /* Put GIF + gradient both on .stApp so inner containers can't cover it */
   .stApp {
-    background-color: transparent !important;   /* must be transparent so body GIF shows */
-    background-image: linear-gradient(to bottom,
-      rgba(8,8,8,0.50) 0%,
-      rgba(8,8,8,0.50) 50%,
-      rgba(8,8,8,0.88) 72%,
-      rgba(8,8,8,1.00) 85%
-    ) !important;
+    background-image:
+      linear-gradient(to bottom,
+        rgba(8,8,8,0.50) 0%,
+        rgba(8,8,8,0.50) 50%,
+        rgba(8,8,8,0.88) 72%,
+        rgba(8,8,8,1.00) 85%
+      ),
+      url('/app/static/ghost_rider_flames_animated_5s.gif') !important;
+    background-size: cover, 100% auto !important;
+    background-position: top center, top center !important;
+    background-repeat: no-repeat, no-repeat !important;
+    background-color: #080808 !important;
     min-height: 100vh !important;
+  }
+  /* Inner containers must be transparent so the .stApp background shows */
+  [data-testid="stAppViewContainer"],
+  [data-testid="stMain"],
+  section.main {
+    background: transparent !important;
   }
   h1, h2, h3 { color: #00D4FF !important; letter-spacing: 0.04em; }
 
@@ -63,14 +66,9 @@ st.markdown("""
     }
   }
 
-  /* ── Search tab — center FILTER row and pills ────────────────────── */
-  [data-testid="stPills"] {
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: center !important;
-  }
-  [data-testid="stPills"] > div {
-    justify-content: center !important;
+  /* ── Search input — center placeholder text ─────────────────────── */
+  .stTextInput > div > div > input {
+    text-align: center !important;
   }
 
   /* ── Cards / containers ──────────────────────────────────────────── */
@@ -105,6 +103,32 @@ st.markdown("""
     border-radius: 14px !important;
     overflow: hidden;
   }
+  /* Center the header row; hide default chevron SVG */
+  [data-testid="stExpander"] details summary {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    list-style: none !important;
+    gap: 0.4rem !important;
+  }
+  [data-testid="stExpander"] details summary::-webkit-details-marker { display: none !important; }
+  [data-testid="stExpander"] details summary svg { display: none !important; }
+  [data-testid="stExpander"] details summary > div {
+    justify-content: center !important;
+  }
+  /* Flip triangles via [open] attribute */
+  [data-testid="stExpander"] details:not([open]) summary::before {
+    content: "▼" !important; color: #FF6A00 !important; font-size: 0.7rem !important;
+  }
+  [data-testid="stExpander"] details[open] summary::before {
+    content: "▲" !important; color: #FF6A00 !important; font-size: 0.7rem !important;
+  }
+  [data-testid="stExpander"] details:not([open]) summary::after {
+    content: "▼" !important; color: #FF6A00 !important; font-size: 0.7rem !important;
+  }
+  [data-testid="stExpander"] details[open] summary::after {
+    content: "▲" !important; color: #FF6A00 !important; font-size: 0.7rem !important;
+  }
 
   /* ── Text inputs ─────────────────────────────────────────────────── */
   .stTextInput > div > div > input {
@@ -119,11 +143,16 @@ st.markdown("""
     box-shadow: 0 0 12px #FF6A0033 !important;
   }
 
-  /* ── Pills / filter chips — allow wrapping to 2 rows ─────────────── */
-  [data-testid="stPills"],
+  /* ── Pills / filter chips — centered, wrapping ───────────────────── */
+  [data-testid="stPills"] {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+  }
   [data-testid="stPills"] > div {
     display: flex !important;
     flex-wrap: wrap !important;
+    justify-content: center !important;
     gap: 6px !important;
   }
   [data-testid="stPills"] button {
@@ -217,8 +246,12 @@ st.markdown("""
   }
   [data-testid="stTabs"] [role="tab"][aria-selected="true"]::after {
     color: #FF6A00 !important;
-    border-bottom: 1.5px solid #FF6A00 !important;
-    padding-bottom: 1px !important;
+  }
+  /* Suppress any browser or Streamlit underline on tab labels */
+  [data-testid="stTabs"] [role="tab"],
+  [data-testid="stTabs"] [role="tab"]::after {
+    text-decoration: none !important;
+    border-bottom: none !important;
   }
   /* Mobile: scale circles to fit 5 across — still clearly readable */
   @media (max-width: 500px) {
@@ -529,7 +562,7 @@ tab_search, tab_diagrams, tab_specs, tab_codes, tab_tsbs = st.tabs([
 # SEARCH TAB
 # ════════════════════════════════════════════════════════════════════════════
 with tab_search:
-    with st.expander("⚡ Quick diagnostic searches", expanded=False):
+    with st.expander("⚡  QUICK DIAGNOSTIC SEARCHES  ⚡", expanded=False):
         cols = st.columns(2)
         for i, (label, term) in enumerate(QUICK_QUERIES):
             if cols[i % 2].button(label, key=f"quick_{i}", use_container_width=True):

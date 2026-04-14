@@ -51,24 +51,35 @@ st.markdown("""
   h1, h2, h3 { color: #00D4FF !important; letter-spacing: 0.04em; }
 
   /* ── Responsive layout / centering ──────────────────────────────── */
-  /* Target both Streamlit selector variants for robustness */
-  .main .block-container,
+  /* 1. Strip padding from the outer main wrapper */
+  [data-testid="stMain"],
+  section.main,
+  .main {
+    padding: 0 !important;
+    width: 100% !important;
+  }
+  /* 2. Constrain + center the block container (all known Streamlit selectors) */
+  [data-testid="stMainBlockContainer"],
   [data-testid="stAppViewBlockContainer"],
-  .block-container {
-    max-width: 880px !important;
+  .stMainBlockContainer,
+  .main .block-container,
+  div.block-container {
+    max-width: 900px !important;
     width: 100% !important;
     margin-left: auto !important;
     margin-right: auto !important;
-    padding: 1rem 1.5rem 2rem !important;
+    padding: 1rem 2rem 3rem !important;
     box-sizing: border-box !important;
   }
-  .main { padding-left: 0 !important; padding-right: 0 !important; }
+  /* 3. Tab panels — no extra offset */
+  [role="tabpanel"] { padding: 0 !important; }
   @media (max-width: 768px) {
-    .main .block-container,
+    [data-testid="stMainBlockContainer"],
     [data-testid="stAppViewBlockContainer"],
-    .block-container {
+    .main .block-container,
+    div.block-container {
       max-width: 100% !important;
-      padding: 0.75rem 0.5rem 2rem !important;
+      padding: 0.75rem 0.75rem 2rem !important;
     }
   }
 
@@ -148,7 +159,7 @@ st.markdown("""
     justify-content: center !important;
     gap: 14px !important;
     border-bottom: 1px solid #1e1e1e !important;
-    padding: 4px 0 32px !important;
+    padding: 4px 0 50px !important;
     overflow: visible !important;
   }
   /* Outer circle */
@@ -187,7 +198,7 @@ st.markdown("""
   /* Label text below each circle via CSS ::after */
   [data-testid="stTabs"] [role="tab"]::after {
     position: absolute !important;
-    bottom: -24px !important;
+    bottom: -34px !important;
     left: 50% !important;
     transform: translateX(-50%) !important;
     font-size: 1rem !important;     /* was 0.58rem — 1.75x bigger */
@@ -221,7 +232,7 @@ st.markdown("""
   }
   /* Mobile: scale circles to fit 5 across — still clearly readable */
   @media (max-width: 500px) {
-    [data-testid="stTabs"] [role="tablist"] { gap: 8px !important; padding-bottom: 32px !important; }
+    [data-testid="stTabs"] [role="tablist"] { gap: 8px !important; padding-bottom: 46px !important; }
     [data-testid="stTabs"] [role="tab"] {
       width: 60px !important;
       min-width: 60px !important;
@@ -230,11 +241,11 @@ st.markdown("""
       border-width: 2.5px !important;
     }
     [data-testid="stTabs"] [role="tab"] p {
-      font-size: 2.2rem !important;   /* 1.75x scale vs original */
+      font-size: 2.2rem !important;
     }
     [data-testid="stTabs"] [role="tab"]::after {
-      font-size: 0.85rem !important;  /* 1.75x vs old 0.5rem */
-      bottom: -20px !important;
+      font-size: 0.77rem !important;  /* −10% from 0.85rem */
+      bottom: -28px !important;
     }
   }
 

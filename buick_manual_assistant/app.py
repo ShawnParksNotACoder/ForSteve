@@ -27,15 +27,31 @@ st.set_page_config(
 # ── Global CSS ────────────────────────────────────────────────────────────────
 st.markdown("""
 <style>
+  /* ── App base ────────────────────────────────────────────────────── */
   .stApp { background: #080808; }
   h1, h2, h3 { color: #00D4FF !important; letter-spacing: 0.04em; }
 
+  /* ── Responsive layout ───────────────────────────────────────────── */
+  .main .block-container {
+    max-width: 880px !important;
+    margin: 0 auto !important;
+    padding: 1rem 1.5rem 2rem !important;
+  }
+  @media (max-width: 768px) {
+    .main .block-container {
+      max-width: 100% !important;
+      padding: 0.75rem 0.5rem 2rem !important;
+    }
+  }
+
+  /* ── Cards / containers ──────────────────────────────────────────── */
   [data-testid="stVerticalBlockBorderWrapper"] {
-    border: 1px solid #00D4FF33 !important;
-    background: #111111 !important;
+    border: 1px solid #00D4FF1A !important;
+    background: #0e0e0e !important;
     border-radius: 16px !important;
   }
 
+  /* ── Buttons ─────────────────────────────────────────────────────── */
   .stButton > button[kind="primary"],
   .stButton > button {
     background: #FF6A00 !important;
@@ -45,24 +61,26 @@ st.markdown("""
     border-radius: 12px !important;
     letter-spacing: 0.05em;
     padding: 0.45rem 1.2rem !important;
+    transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease !important;
   }
   .stButton > button:hover {
     background: #FF8C00 !important;
-    color: #FFFFFF !important;
-    box-shadow: 0 0 16px #FF6A0055;
+    color: #080808 !important;
+    box-shadow: 0 0 18px #FF6A0055 !important;
   }
 
+  /* ── Expanders ───────────────────────────────────────────────────── */
   details > summary { color: #00D4FF !important; font-size: 0.85rem; }
-
   [data-testid="stExpander"] {
-    border: 1px solid #00D4FF22 !important;
-    border-radius: 12px !important;
+    border: 1px solid #00D4FF1A !important;
+    border-radius: 14px !important;
     overflow: hidden;
   }
 
+  /* ── Text inputs ─────────────────────────────────────────────────── */
   .stTextInput > div > div > input {
     background: #141414 !important;
-    border: 1px solid #FF6A0066 !important;
+    border: 1px solid #FF6A0055 !important;
     color: #E8E8E8 !important;
     border-radius: 12px !important;
     padding: 0.5rem 1rem !important;
@@ -72,13 +90,20 @@ st.markdown("""
     box-shadow: 0 0 12px #FF6A0033 !important;
   }
 
-  /* Pills / filter chips */
+  /* ── Pills / filter chips — allow wrapping to 2 rows ─────────────── */
+  [data-testid="stPills"],
+  [data-testid="stPills"] > div {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+  }
   [data-testid="stPills"] button {
     border-radius: 20px !important;
     border: 1px solid #FF6A0055 !important;
     background: #141414 !important;
     color: #E8E8E8 !important;
     font-size: 0.8rem !important;
+    white-space: nowrap !important;
   }
   [data-testid="stPills"] button[aria-selected="true"] {
     background: #FF6A00 !important;
@@ -86,30 +111,74 @@ st.markdown("""
     border-color: #FF6A00 !important;
   }
 
-  /* Tabs */
-  [data-testid="stTabs"] button {
-    color: #888 !important;
-    font-family: monospace !important;
-    letter-spacing: 0.06em;
+  /* ── Sweettart round nav tabs ────────────────────────────────────── */
+  [data-testid="stTabs"] [role="tablist"] {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 12px !important;
+    border-bottom: 1px solid #1e1e1e !important;
+    padding-bottom: 10px !important;
   }
-  [data-testid="stTabs"] button[aria-selected="true"] {
-    color: #00D4FF !important;
-    border-bottom-color: #00D4FF !important;
+  [data-testid="stTabs"] [role="tab"] {
+    width: 54px !important;
+    min-width: 54px !important;
+    max-width: 54px !important;
+    height: 54px !important;
+    border-radius: 50% !important;
+    background: #1a1a1a !important;
+    border: 2px solid #2c2c2c !important;
+    color: #777 !important;
+    font-size: 1.3rem !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 0 !important;
+    flex-shrink: 0 !important;
+    font-family: unset !important;
+    letter-spacing: 0 !important;
+    transition: all 0.16s ease !important;
+    overflow: visible !important;
+  }
+  [data-testid="stTabs"] [role="tab"]:hover {
+    border-color: #FF6A00 !important;
+    background: #221000 !important;
+    color: #FF8C00 !important;
+  }
+  [data-testid="stTabs"] [role="tab"][aria-selected="true"] {
+    background: #FF6A00 !important;
+    border-color: #FF6A00 !important;
+    color: #FFFFFF !important;
+    box-shadow: 0 0 22px #FF6A0070, 0 4px 14px rgba(0,0,0,0.55) !important;
+  }
+  /* Hide Streamlit's bottom-line indicator on selected tab */
+  [data-testid="stTabs"] [role="tab"] > div:last-child,
+  [data-testid="stTabs"] [role="tab"]::after {
+    display: none !important;
+  }
+  [data-testid="stTabs"] [role="tab"] p {
+    margin: 0 !important;
+    padding: 0 !important;
+    line-height: 1 !important;
+    color: inherit !important;
+    font-size: inherit !important;
   }
 
-  /* Diagram images — pinch-zoomable on mobile */
+  /* ── Diagram images — pinch-zoomable ─────────────────────────────── */
   [data-testid="stImage"] img {
     border-radius: 10px;
-    border: 1px solid #00D4FF22;
+    border: 1px solid #00D4FF1A;
     touch-action: pinch-zoom;
   }
 
-  .stCaption { color: #888 !important; }
-  hr { border-color: #222 !important; }
+  .stCaption { color: #777 !important; }
+  hr { border-color: #1c1c1c !important; }
 
+  /* ── Sidebar ─────────────────────────────────────────────────────── */
   [data-testid="stSidebar"] {
-    background: #0d0d0d !important;
-    border-right: 1px solid #FF6A0033;
+    background: #0a0a0a !important;
+    border-right: 1px solid #FF6A0022;
   }
 
   #MainMenu { visibility: hidden; }
@@ -380,13 +449,22 @@ st.markdown(
 
 st.markdown("---")
 
+# ── Tab legend ────────────────────────────────────────────────────────────────
+st.markdown(
+    "<div style='display:flex; justify-content:center; gap:18px; margin:0 0 0.25rem;"
+    " font-family:monospace; font-size:0.6rem; color:#3a3a3a; letter-spacing:0.1em;'>"
+    "<span>🔍&nbsp;SEARCH</span>"
+    "<span>📐&nbsp;DIAGRAMS</span>"
+    "<span>📋&nbsp;SPECS</span>"
+    "<span>⚠️&nbsp;CODES</span>"
+    "<span>📣&nbsp;TSBs</span>"
+    "</div>",
+    unsafe_allow_html=True,
+)
+
 # ── Tabs ──────────────────────────────────────────────────────────────────────
 tab_search, tab_diagrams, tab_specs, tab_codes, tab_tsbs = st.tabs([
-    "🔍  Search",
-    "📐  Diagrams",
-    "📋  Specs",
-    "⚠️  Codes",
-    "📣  TSBs",
+    "🔍", "📐", "📋", "⚠️", "📣",
 ])
 
 

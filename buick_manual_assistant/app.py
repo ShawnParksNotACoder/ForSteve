@@ -20,7 +20,7 @@ LOGO_PATH = BASE_DIR / "assets" / "ghost_rider.png"
 st.set_page_config(
     page_title="Ghost Rider — GN Shop Manual",
     page_icon="🔧",
-    layout="centered",
+    layout="wide",
     initial_sidebar_state="collapsed",
 )
 

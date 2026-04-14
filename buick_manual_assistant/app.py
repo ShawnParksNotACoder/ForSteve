@@ -133,7 +133,7 @@ st.markdown("""
     background: #282828 !important;
     border: 3px solid #363636 !important;
     color: #bbb !important;
-    font-size: 1.65rem !important;
+    font-size: 2.4rem !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
@@ -144,16 +144,6 @@ st.markdown("""
     transition: all 0.18s ease !important;
     position: relative !important;
     overflow: visible !important;
-  }
-  /* Dark inner square — style the content wrapper div */
-  [data-testid="stTabs"] [role="tab"] > div[data-testid="stMarkdownContainer"] {
-    width: 56% !important;
-    height: 56% !important;
-    background: #0d0d0d !important;
-    border-radius: 8px !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
   }
   /* Hide Streamlit's indicator line div (not the content div) */
   [data-testid="stTabs"] [role="tab"] > div:not([data-testid="stMarkdownContainer"]) {
@@ -196,9 +186,6 @@ st.markdown("""
     color: #FFF !important;
     box-shadow: 0 0 30px #FF6A0088, 0 4px 18px rgba(0,0,0,0.65) !important;
   }
-  [data-testid="stTabs"] [role="tab"][aria-selected="true"] > div[data-testid="stMarkdownContainer"] {
-    background: #111 !important;
-  }
   [data-testid="stTabs"] [role="tab"][aria-selected="true"]::after {
     color: #FF6A00 !important;
     border-bottom: 1.5px solid #FF6A00 !important;
@@ -212,7 +199,7 @@ st.markdown("""
       min-width: 60px !important;
       max-width: 60px !important;
       height: 60px !important;
-      font-size: 1.2rem !important;
+      font-size: 1.8rem !important;
       border-width: 2.5px !important;
     }
     [data-testid="stTabs"] [role="tab"]::after {

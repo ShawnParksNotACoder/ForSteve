@@ -63,6 +63,16 @@ st.markdown("""
     }
   }
 
+  /* ── Search tab — center FILTER row and pills ────────────────────── */
+  [data-testid="stPills"] {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+  }
+  [data-testid="stPills"] > div {
+    justify-content: center !important;
+  }
+
   /* ── Cards / containers ──────────────────────────────────────────── */
   [data-testid="stVerticalBlockBorderWrapper"] {
     border: 1px solid #00D4FF1A !important;
@@ -536,7 +546,7 @@ with tab_search:
     # System filter pills with label
     st.markdown(
         "<p style='color:#888; font-size:0.75rem; font-family:monospace;"
-        " letter-spacing:0.1em; margin-bottom:0.2rem;'>FILTER:</p>",
+        " letter-spacing:0.1em; margin-bottom:0.2rem; text-align:center;'>FILTER:</p>",
         unsafe_allow_html=True,
     )
     selected_filter = st.pills(
@@ -612,12 +622,15 @@ with tab_search:
 
     else:
         st.markdown(
-            "<p style='color:#888; font-size:0.85rem;'>"
+            "<p style='color:#888; font-size:0.85rem; text-align:center;'>"
             "Full repair reference for the Grand National platform. Search above "
             "or tap a shortcut below.</p>",
             unsafe_allow_html=True,
         )
-        st.markdown("#### Popular searches")
+        st.markdown(
+            "<h4 style='text-align:center;'>Popular searches</h4>",
+            unsafe_allow_html=True,
+        )
         col1, col2 = st.columns(2)
         for i, (label, term) in enumerate(POPULAR):
             col = col1 if i % 2 == 0 else col2

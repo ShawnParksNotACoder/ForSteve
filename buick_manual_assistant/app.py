@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import base64
 import json
 import re
 from pathlib import Path
@@ -31,38 +32,40 @@ st.markdown("""
   /* Cyan headings */
   h1, h2, h3 { color: #00D4FF !important; letter-spacing: 0.04em; }
 
-  /* Result card: subtle cyan border, dark fill */
+  /* Result card: subtle cyan border, dark fill, rounder corners */
   [data-testid="stVerticalBlockBorderWrapper"] {
     border: 1px solid #00D4FF33 !important;
     background: #111111 !important;
-    border-radius: 6px;
+    border-radius: 16px !important;
   }
 
-  /* Orange primary buttons */
+  /* Orange primary buttons — rounder */
   .stButton > button[kind="primary"],
   .stButton > button {
     background: #FF6A00 !important;
     color: #080808 !important;
     font-weight: 700 !important;
     border: none !important;
-    border-radius: 4px !important;
+    border-radius: 12px !important;
     letter-spacing: 0.05em;
+    padding: 0.45rem 1.2rem !important;
   }
   .stButton > button:hover {
     background: #FF8C00 !important;
-    box-shadow: 0 0 12px #FF6A0066;
+    box-shadow: 0 0 16px #FF6A0055;
   }
 
-  /* Cyan outline for secondary/expander buttons */
+  /* Cyan outline for expander summaries */
   details > summary {
     color: #00D4FF !important;
     font-size: 0.85rem;
   }
 
-  /* Expander border */
+  /* Expander border — rounder */
   [data-testid="stExpander"] {
     border: 1px solid #00D4FF22 !important;
-    border-radius: 4px;
+    border-radius: 12px !important;
+    overflow: hidden;
   }
 
   /* Score badge */
@@ -72,16 +75,17 @@ st.markdown("""
     font-family: monospace;
   }
 
-  /* Text input glow */
+  /* Text input — rounder, orange glow */
   .stTextInput > div > div > input {
     background: #141414 !important;
     border: 1px solid #FF6A0066 !important;
     color: #E8E8E8 !important;
-    border-radius: 4px !important;
+    border-radius: 12px !important;
+    padding: 0.5rem 1rem !important;
   }
   .stTextInput > div > div > input:focus {
     border-color: #FF6A00 !important;
-    box-shadow: 0 0 8px #FF6A0044 !important;
+    box-shadow: 0 0 12px #FF6A0033 !important;
   }
 
   /* Caption text */
@@ -108,32 +112,69 @@ if "splash_dismissed" not in st.session_state:
     st.session_state.splash_dismissed = False
 
 if not st.session_state.splash_dismissed:
-    st.markdown("<br><br>", unsafe_allow_html=True)
-
+    # Build image tag — base64 embed so it sits inside the glass card HTML
     if LOGO_PATH.exists():
-        col1, col2, col3 = st.columns([1, 6, 1])
-        with col2:
-            st.image(str(LOGO_PATH), use_container_width=True)
+        img_b64 = base64.b64encode(LOGO_PATH.read_bytes()).decode()
+        img_tag = (
+            f'<img src="data:image/png;base64,{img_b64}" '
+            f'style="width:100%; border-radius:16px; display:block;">'
+        )
     else:
-        st.markdown("""
-        <div style='text-align:center; padding: 3rem 0 1rem 0;'>
-          <span style='
-            font-size: 3.5rem;
-            font-weight: 900;
-            font-family: Georgia, serif;
-            background: linear-gradient(90deg, #FF6A00 0%, #FFB347 50%, #FF6A00 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            letter-spacing: 0.08em;
-          '>GHOST RIDER</span>
-          <p style='color:#00D4FF; font-size:1rem; margin-top:0.5rem;
-                    font-family:monospace; letter-spacing:0.1em;'>
-            1984 BUICK GRAND NATIONAL
-          </p>
-        </div>
-        """, unsafe_allow_html=True)
+        img_tag = (
+            "<p style='font-size:3rem; font-weight:900; font-family:Georgia;"
+            " background:linear-gradient(90deg,#FF6A00,#FFB347,#FF6A00);"
+            " -webkit-background-clip:text; -webkit-text-fill-color:transparent;"
+            " letter-spacing:0.08em; margin:1rem 0;'>GHOST RIDER</p>"
+        )
 
-    st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown(f"""
+    <style>
+      /* Splash: amber glow at bottom to give the glass something to catch */
+      .stApp {{
+        background: radial-gradient(ellipse at 50% 90%,
+          rgba(255,100,0,0.18) 0%, #080808 55%) !important;
+      }}
+    </style>
+    <div style="
+      min-height:70vh;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      padding:2rem 1rem;
+    ">
+      <!-- Glass card -->
+      <div style="
+        max-width:460px;
+        width:100%;
+        background:linear-gradient(145deg,
+          rgba(255,255,255,0.09) 0%,
+          rgba(255,255,255,0.03) 100%);
+        backdrop-filter:blur(28px);
+        -webkit-backdrop-filter:blur(28px);
+        border:1px solid rgba(255,255,255,0.13);
+        border-top:1px solid rgba(255,255,255,0.22);
+        border-left:1px solid rgba(255,255,255,0.16);
+        border-radius:28px;
+        box-shadow:
+          0 24px 56px rgba(0,0,0,0.75),
+          0 8px 20px rgba(0,0,0,0.5),
+          inset 0 1px 0 rgba(255,255,255,0.12),
+          0 0 80px rgba(255,100,0,0.10);
+        padding:1.75rem 1.75rem 1.25rem;
+        text-align:center;
+      ">
+        {img_tag}
+        <p style="
+          color:#00D4FF;
+          font-family:monospace;
+          font-size:0.78rem;
+          letter-spacing:0.18em;
+          margin:1rem 0 0.25rem;
+        ">1984 BUICK GRAND NATIONAL</p>
+      </div>
+    </div>
+    """, unsafe_allow_html=True)
 
     col1, col2, col3 = st.columns([2, 3, 2])
     with col2:
@@ -141,12 +182,12 @@ if not st.session_state.splash_dismissed:
             st.session_state.splash_dismissed = True
             st.rerun()
 
-    st.markdown("""
-    <p style='text-align:center; color:#444; font-size:0.75rem;
-              margin-top:3rem; font-family:monospace;'>
-      1984 BUICK REGAL 3.8L TURBO V6 · SHOP MANUAL REFERENCE
-    </p>
-    """, unsafe_allow_html=True)
+    st.markdown(
+        "<p style='text-align:center; color:#333; font-size:0.7rem;"
+        " font-family:monospace; margin-top:1.5rem;'>"
+        "3.8L TURBO V6 · VIN 9 · SHOP MANUAL</p>",
+        unsafe_allow_html=True,
+    )
     st.stop()
 
 
@@ -361,12 +402,24 @@ if query:
                         unsafe_allow_html=True,
                     )
 
-                preview = clean_for_display(doc["body"])[:500].strip()
-                if preview:
-                    st.markdown(preview + ("…" if len(doc["body"]) > 500 else ""))
+                body_clean = clean_for_display(doc["body"])
+                PREVIEW = 500
 
-                with st.expander("Full document"):
-                    st.markdown(clean_for_display(doc["body"]))
+                if len(body_clean) <= PREVIEW:
+                    # Short doc — show everything, no expander needed
+                    st.markdown(body_clean)
+                else:
+                    # Break at nearest newline before PREVIEW chars
+                    break_at = body_clean.rfind("\n", 0, PREVIEW)
+                    if break_at < 150:
+                        break_at = body_clean.rfind(" ", 0, PREVIEW)
+                    if break_at < 0:
+                        break_at = PREVIEW
+
+                    st.markdown(body_clean[:break_at].strip() + "…")
+
+                    with st.expander("Read more ↓"):
+                        st.markdown(body_clean[break_at:].strip())
 
 # ── Home screen ───────────────────────────────────────────────────────────────
 else:

@@ -112,25 +112,28 @@ st.markdown("""
   }
 
   /* ── Sweettart round nav tabs ────────────────────────────────────── */
+  [data-testid="stTabs"] { overflow: visible !important; }
   [data-testid="stTabs"] [role="tablist"] {
     display: flex !important;
     flex-direction: row !important;
     align-items: center !important;
     justify-content: center !important;
-    gap: 12px !important;
+    gap: 14px !important;
     border-bottom: 1px solid #1e1e1e !important;
-    padding-bottom: 10px !important;
+    padding: 4px 0 32px !important;
+    overflow: visible !important;
   }
+  /* Outer circle */
   [data-testid="stTabs"] [role="tab"] {
-    width: 54px !important;
-    min-width: 54px !important;
-    max-width: 54px !important;
-    height: 54px !important;
+    width: 80px !important;
+    min-width: 80px !important;
+    max-width: 80px !important;
+    height: 80px !important;
     border-radius: 50% !important;
-    background: #1a1a1a !important;
-    border: 2px solid #2c2c2c !important;
-    color: #777 !important;
-    font-size: 1.3rem !important;
+    background: #282828 !important;
+    border: 3px solid #363636 !important;
+    color: #bbb !important;
+    font-size: 1.65rem !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
@@ -138,23 +141,22 @@ st.markdown("""
     flex-shrink: 0 !important;
     font-family: unset !important;
     letter-spacing: 0 !important;
-    transition: all 0.16s ease !important;
+    transition: all 0.18s ease !important;
+    position: relative !important;
     overflow: visible !important;
   }
-  [data-testid="stTabs"] [role="tab"]:hover {
-    border-color: #FF6A00 !important;
-    background: #221000 !important;
-    color: #FF8C00 !important;
+  /* Dark inner square — style the content wrapper div */
+  [data-testid="stTabs"] [role="tab"] > div[data-testid="stMarkdownContainer"] {
+    width: 56% !important;
+    height: 56% !important;
+    background: #0d0d0d !important;
+    border-radius: 8px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
   }
-  [data-testid="stTabs"] [role="tab"][aria-selected="true"] {
-    background: #FF6A00 !important;
-    border-color: #FF6A00 !important;
-    color: #FFFFFF !important;
-    box-shadow: 0 0 22px #FF6A0070, 0 4px 14px rgba(0,0,0,0.55) !important;
-  }
-  /* Hide Streamlit's bottom-line indicator on selected tab */
-  [data-testid="stTabs"] [role="tab"] > div:last-child,
-  [data-testid="stTabs"] [role="tab"]::after {
+  /* Hide Streamlit's indicator line div (not the content div) */
+  [data-testid="stTabs"] [role="tab"] > div:not([data-testid="stMarkdownContainer"]) {
     display: none !important;
   }
   [data-testid="stTabs"] [role="tab"] p {
@@ -163,6 +165,60 @@ st.markdown("""
     line-height: 1 !important;
     color: inherit !important;
     font-size: inherit !important;
+  }
+  /* Label text below each circle via CSS ::after */
+  [data-testid="stTabs"] [role="tab"]::after {
+    position: absolute !important;
+    bottom: -22px !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    font-size: 0.58rem !important;
+    font-family: monospace !important;
+    letter-spacing: 0.1em !important;
+    color: #444 !important;
+    white-space: nowrap !important;
+  }
+  [data-testid="stTabs"] [role="tab"]:nth-child(1)::after { content: "SEARCH" !important; }
+  [data-testid="stTabs"] [role="tab"]:nth-child(2)::after { content: "DIAGRAMS" !important; }
+  [data-testid="stTabs"] [role="tab"]:nth-child(3)::after { content: "SPECS" !important; }
+  [data-testid="stTabs"] [role="tab"]:nth-child(4)::after { content: "CODES" !important; }
+  [data-testid="stTabs"] [role="tab"]:nth-child(5)::after { content: "TSBs" !important; }
+  /* Hover */
+  [data-testid="stTabs"] [role="tab"]:hover {
+    border-color: #FF6A00 !important;
+    background: #2a1500 !important;
+  }
+  [data-testid="stTabs"] [role="tab"]:hover::after { color: #FF6A0099 !important; }
+  /* Active / selected */
+  [data-testid="stTabs"] [role="tab"][aria-selected="true"] {
+    background: #FF6A00 !important;
+    border-color: #FF8C00 !important;
+    color: #FFF !important;
+    box-shadow: 0 0 30px #FF6A0088, 0 4px 18px rgba(0,0,0,0.65) !important;
+  }
+  [data-testid="stTabs"] [role="tab"][aria-selected="true"] > div[data-testid="stMarkdownContainer"] {
+    background: #111 !important;
+  }
+  [data-testid="stTabs"] [role="tab"][aria-selected="true"]::after {
+    color: #FF6A00 !important;
+    border-bottom: 1.5px solid #FF6A00 !important;
+    padding-bottom: 1px !important;
+  }
+  /* Mobile: scale circles down so all 5 fit */
+  @media (max-width: 500px) {
+    [data-testid="stTabs"] [role="tablist"] { gap: 8px !important; padding-bottom: 28px !important; }
+    [data-testid="stTabs"] [role="tab"] {
+      width: 60px !important;
+      min-width: 60px !important;
+      max-width: 60px !important;
+      height: 60px !important;
+      font-size: 1.2rem !important;
+      border-width: 2.5px !important;
+    }
+    [data-testid="stTabs"] [role="tab"]::after {
+      font-size: 0.5rem !important;
+      bottom: -18px !important;
+    }
   }
 
   /* ── Diagram images — pinch-zoomable ─────────────────────────────── */
@@ -449,19 +505,6 @@ st.markdown(
 
 st.markdown("---")
 
-# ── Tab legend ────────────────────────────────────────────────────────────────
-st.markdown(
-    "<div style='display:flex; justify-content:center; gap:18px; margin:0 0 0.25rem;"
-    " font-family:monospace; font-size:0.6rem; color:#3a3a3a; letter-spacing:0.1em;'>"
-    "<span>🔍&nbsp;SEARCH</span>"
-    "<span>📐&nbsp;DIAGRAMS</span>"
-    "<span>📋&nbsp;SPECS</span>"
-    "<span>⚠️&nbsp;CODES</span>"
-    "<span>📣&nbsp;TSBs</span>"
-    "</div>",
-    unsafe_allow_html=True,
-)
-
 # ── Tabs ──────────────────────────────────────────────────────────────────────
 tab_search, tab_diagrams, tab_specs, tab_codes, tab_tsbs = st.tabs([
     "🔍", "📐", "📋", "⚠️", "📣",
@@ -482,7 +525,7 @@ with tab_search:
     query = st.text_input(
         "search",
         value=default_query,
-        placeholder="e.g.  spark plug gap · boost pressure · fuel pump · timing",
+        placeholder="Search the shop manual…",
         label_visibility="collapsed",
     )
 

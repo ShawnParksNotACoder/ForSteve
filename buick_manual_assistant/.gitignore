@@ -1,6 +1,4 @@
 .venv/
-data/raw/
-corpus/
 __pycache__/
 *.pyc
 .env

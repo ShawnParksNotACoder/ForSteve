@@ -1,0 +1,34 @@
+{
+  "won't start": [
+    "ignition control module",
+    "fuel pump relay",
+    "camshaft position sensor",
+    "starting system"
+  ],
+  "cranks no start": [
+    "fuel pump relay",
+    "ignition control module",
+    "camshaft position sensor",
+    "oxygen sensor circuit"
+  ],
+  "no spark": [
+    "ignition control module",
+    "crank sensor",
+    "cam sensor"
+  ],
+  "fuel issue": [
+    "fuel pump relay",
+    "fuel delivery and air induction",
+    "fuel pressure"
+  ],
+  "charging problem": [
+    "alternator",
+    "battery",
+    "charging system"
+  ],
+  "boost issue": [
+    "turbocharger",
+    "wastegate",
+    "vacuum"
+  ]
+}

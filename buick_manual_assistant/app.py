@@ -1,131 +1,215 @@
 from __future__ import annotations
 
 import json
-import sys
+import re
 from pathlib import Path
 
 import streamlit as st
+import yaml
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
 BASE_DIR = Path(__file__).resolve().parent
-CORPUS_PATH = BASE_DIR / "corpus" / "corpus.json"
-SCRIPTS_DIR = BASE_DIR / "scripts"
+KB_DIR = BASE_DIR / "knowledge_base"
+DOCS_PATH = KB_DIR / "docs.jsonl"
+ALIASES_PATH = KB_DIR / "aliases.json"
 
-st.set_page_config(page_title="Buick Manual Assistant", page_icon="🔧", layout="wide")
-
-
-def _import_script(name: str):
-    """Import a script from the scripts/ directory by name."""
-    if str(SCRIPTS_DIR) not in sys.path:
-        sys.path.insert(0, str(SCRIPTS_DIR))
-    import importlib
-    return importlib.import_module(name)
-
-
-def ensure_corpus() -> None:
-    """On first run, fetch sources and build corpus automatically."""
-    if CORPUS_PATH.exists():
-        return
-
-    st.info("First run — building the Buick reference corpus. Hang tight, this takes about a minute...")
-
-    with st.spinner("Fetching Buick reference pages from the web..."):
-        fetch = _import_script("fetch_sources")
-        fetch.main()
-
-    with st.spinner("Building searchable corpus..."):
-        build = _import_script("build_corpus")
-        build.main()
-
-    st.success("Corpus ready — loading the app now!")
-    st.rerun()
-
-
-@st.cache_resource
-def load_corpus_and_vectorizer() -> tuple[list[dict], TfidfVectorizer | None, object]:
-    """Load corpus once and fit vectorizer — cached for the lifetime of the server process."""
-    if not CORPUS_PATH.exists():
-        return [], None, None
-    docs = json.loads(CORPUS_PATH.read_text(encoding="utf-8"))
-    if not docs:
-        return [], None, None
-    texts = [d["text"] for d in docs]
-    vec = TfidfVectorizer(stop_words="english")
-    matrix = vec.fit_transform(texts)
-    return docs, vec, matrix
-
-
-def search_docs(query: str, docs: list[dict], vec: TfidfVectorizer, matrix, top_k: int = 5) -> list[tuple[float, dict]]:
-    query_vec = vec.transform([query])
-    sims = cosine_similarity(query_vec, matrix).flatten()
-    ranked = sorted(zip(sims, docs), key=lambda x: x[0], reverse=True)[:top_k]
-    return ranked
-
-
-def summarize_answer(hits: list[tuple[float, dict]]) -> str:
-    if not hits:
-        return "No matching reference found. Try rephrasing or adding more source pages."
-    best = hits[0][1]["text"]
-    return (
-        "Best matching reference text:\n\n"
-        + best[:1200]
-        + "\n\n---\n_Always verify specs before turning a wrench._"
-    )
-
-
-# --- Auto-build corpus on first deploy ---
-ensure_corpus()
-
-# --- Load corpus (cached) ---
-docs, vec, matrix = load_corpus_and_vectorizer()
-source_count = len({d.get("source_file", "") for d in docs}) if docs else 0
-
-# --- UI ---
-st.title("🔧 Buick Grand National — Manual Assistant")
-st.caption("Reference lookup for 1982–1987 Buick Regal / Grand National")
-
-with st.sidebar:
-    st.header("Corpus status")
-    st.metric("Indexed chunks", len(docs))
-    st.metric("Source pages", source_count)
-    if not docs:
-        st.warning("Corpus not loaded yet — refresh in a moment.")
-    else:
-        st.success("Corpus loaded and ready.")
-    st.markdown("---")
-    st.markdown("### Example questions")
-    st.markdown(
-        "- What is the turbo boost pressure?\n"
-        "- Powermaster brake diagnostics\n"
-        "- ECM wiring info\n"
-        "- Fuel pump relay circuit\n"
-        "- Wastegate adjustment\n"
-        "- HEI distributor timing\n"
-        "- TH200-4R transmission fluid\n"
-        "- Spark plug gap spec"
-    )
-    st.markdown("---")
-    st.caption("Always verify specs before turning a wrench.")
-
-query = st.text_input(
-    "Ask a repair or reference question",
-    placeholder="Example: What is the stock turbo boost pressure on a Grand National?"
+st.set_page_config(
+    page_title="Grand National Shop Manual",
+    page_icon="🔧",
+    layout="centered",
+    initial_sidebar_state="collapsed",
 )
 
-if query:
-    if not docs:
-        st.warning("Corpus is still loading — please refresh in a moment.")
-    else:
-        hits = search_docs(query, docs, vec, matrix, top_k=5)
-        st.subheader("Best match")
-        st.write(summarize_answer(hits))
+CATEGORY_BADGE = {
+    "technical-service-bulletins": "🟡 TSB",
+    "specifications": "🟢 Specs",
+    "service-and-repair": "🔵 Service & Repair",
+    "repair-and-diagnosis": "🔴 Repair & Diagnosis",
+    "maintenance": "🟠 Maintenance",
+}
 
-        st.subheader("Top source matches")
+QUICK_QUERIES = [
+    "cranks but won't start",
+    "no spark",
+    "fuel pressure low",
+    "boost issue",
+    "rough idle",
+    "charging problem",
+    "spark plug gap",
+    "TH200-4R transmission",
+]
+
+
+# ── Helpers ──────────────────────────────────────────────────────────────────
+
+def parse_frontmatter(content: str) -> dict:
+    if content.startswith("---"):
+        parts = content.split("---", 2)
+        if len(parts) >= 3:
+            try:
+                return yaml.safe_load(parts[1]) or {}
+            except Exception:
+                pass
+    return {}
+
+
+def strip_frontmatter(content: str) -> str:
+    if content.startswith("---"):
+        parts = content.split("---", 2)
+        if len(parts) >= 3:
+            return parts[2].strip()
+    return content.strip()
+
+
+def clean_for_display(text: str) -> str:
+    """Strip image refs and internal .md links for cleaner display."""
+    text = re.sub(r"!\[.*?\]\([^)]*\)", "", text)
+    text = re.sub(r"\[([^\]]+)\]\([^)]*\.md[^)]*\)", r"**\1**", text)
+    text = re.sub(r"\n{3,}", "\n\n", text)
+    return text.strip()
+
+
+# ── Knowledge base loading ────────────────────────────────────────────────────
+
+@st.cache_resource(show_spinner="Loading shop manual index…")
+def load_knowledge_base():
+    with open(DOCS_PATH, encoding="utf-8") as f:
+        raw_docs = [json.loads(line) for line in f]
+
+    with open(ALIASES_PATH, encoding="utf-8") as f:
+        aliases = json.load(f)
+
+    records = []
+    for doc in raw_docs:
+        content = doc["content"]
+        fm = parse_frontmatter(content)
+        body = strip_frontmatter(content)
+
+        title = fm.get("title") or doc.get("filename", "Untitled")
+        keywords = fm.get("keywords") or []
+        category = fm.get("category", "")
+        system = fm.get("system", "")
+
+        search_text = " ".join([title] + keywords + [body])
+
+        records.append({
+            "path": doc["path"],
+            "title": title,
+            "keywords": keywords,
+            "category": category,
+            "system": system,
+            "body": body,
+            "search_text": search_text,
+        })
+
+    texts = [r["search_text"] for r in records]
+    vec = TfidfVectorizer(stop_words="english", max_features=60000, ngram_range=(1, 2))
+    matrix = vec.fit_transform(texts)
+
+    return records, vec, matrix, aliases
+
+
+def expand_query(query: str, aliases: dict) -> str:
+    q_lower = query.lower()
+    parts = [query]
+    for key, terms in aliases.items():
+        if key.lower() in q_lower:
+            parts.extend(terms)
+    return " ".join(parts)
+
+
+def search(query: str, records, vec, matrix, top_k: int = 8):
+    expanded = expand_query(query, st.session_state.get("_aliases", {}))
+    q_vec = vec.transform([expanded])
+    sims = cosine_similarity(q_vec, matrix).flatten()
+    ranked = sorted(zip(sims, records), key=lambda x: x[0], reverse=True)
+    return [(s, d) for s, d in ranked[:top_k] if s > 0.01]
+
+
+# ── UI ────────────────────────────────────────────────────────────────────────
+
+records, vec, matrix, aliases = load_knowledge_base()
+st.session_state["_aliases"] = aliases
+
+st.title("🔧 Grand National Shop Manual")
+st.caption("1984 Buick Regal 3.8L Turbo V6 · VIN 9 · Repair & Diagnosis Reference")
+
+# Quick-access diagnostic shortcuts
+with st.expander("Quick diagnostic searches", expanded=False):
+    cols = st.columns(2)
+    for i, q in enumerate(QUICK_QUERIES):
+        if cols[i % 2].button(q, key=f"quick_{i}", use_container_width=True):
+            st.session_state["_query"] = q
+
+# Search box — pre-fill from quick-access buttons
+default_query = st.session_state.pop("_query", "")
+query = st.text_input(
+    "Search the manual",
+    value=default_query,
+    placeholder="e.g. spark plug gap, boost pressure, fuel pump, timing",
+    label_visibility="collapsed",
+)
+
+st.markdown("---")
+
+if query:
+    hits = search(query, records, vec, matrix, top_k=8)
+
+    if not hits:
+        st.warning("No results found. Try different keywords.")
+    else:
+        st.markdown(f"**{len(hits)} result(s)** for: _{query}_")
+        st.markdown("")
+
         for score, doc in hits:
+            badge = CATEGORY_BADGE.get(doc["category"], "📄")
+            system_label = doc["system"].replace("-", " ").title() if doc["system"] else ""
+
             with st.container(border=True):
-                st.markdown(f"**{doc['title']}**")
-                st.caption(f"Match score: {score:.3f} \u00b7 Source file: {doc['source_file']}")
-                st.write(doc["text"][:1400])
+                col1, col2 = st.columns([5, 1])
+                with col1:
+                    st.markdown(f"### {doc['title']}")
+                    if system_label:
+                        st.caption(f"{badge}  ·  {system_label}")
+                with col2:
+                    st.caption(f"Score\n**{score:.2f}**")
+
+                # Preview — first 600 chars of cleaned body
+                preview = clean_for_display(doc["body"])[:600]
+                if preview:
+                    st.markdown(preview + ("…" if len(doc["body"]) > 600 else ""))
+
+                with st.expander("Full document"):
+                    st.markdown(clean_for_display(doc["body"]))
+
 else:
-    st.info("Enter a question above to search indexed Buick Grand National reference material.")
+    st.markdown("#### About this manual")
+    st.markdown(
+        "Full repair and diagnosis reference for the **1984 Buick Regal 3.8L Turbo V6** "
+        "(Grand National platform). Covers engine, fuel, ignition, electrical, transmission, "
+        "brakes, suspension, HVAC, and more.\n\n"
+        "Use the search box above or tap a **Quick diagnostic search** to get started."
+    )
+
+    st.markdown("---")
+    st.markdown("#### Popular searches")
+    col1, col2 = st.columns(2)
+    examples = [
+        ("Spark plug gap", "spark plug gap"),
+        ("Turbo boost pressure", "turbo boost pressure"),
+        ("Fuel pump pressure", "fuel pump pressure"),
+        ("Timing specs", "timing specifications"),
+        ("ECM trouble codes", "ECM diagnostic trouble codes"),
+        ("TH200-4R fluid", "TH200-4R transmission fluid"),
+        ("Wastegate adjustment", "wastegate"),
+        ("Ignition module", "ignition control module"),
+    ]
+    for i, (label, term) in enumerate(examples):
+        col = col1 if i % 2 == 0 else col2
+        if col.button(label, key=f"ex_{i}", use_container_width=True):
+            st.session_state["_query"] = term
+            st.rerun()
+
+st.markdown("---")
+st.caption("Always verify specifications before turning a wrench. · 1984 Buick Regal 3.8L Turbo VIN 9")

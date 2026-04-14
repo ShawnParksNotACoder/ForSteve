@@ -15,7 +15,8 @@ KB_DIR = BASE_DIR / "knowledge_base"
 DOCS_PATH = KB_DIR / "docs.jsonl"
 ALIASES_PATH = KB_DIR / "aliases.json"
 IMAGES_DIR = KB_DIR / "images" / "DM14Q313" / "gm100"
-LOGO_PATH = BASE_DIR / "assets" / "ghost_rider.png"
+LOGO_PATH      = BASE_DIR / "assets" / "ghost_rider.png"
+SMOOTH_GIF_PATH = BASE_DIR / "static" / "ghost_rider_smooth.gif"
 
 st.set_page_config(
     page_title="Ghost Rider — GN Shop Manual",
@@ -28,16 +29,18 @@ st.set_page_config(
 st.markdown("""
 <style>
   /* ── App base — animated flame background via static serving ─────── */
-  body {
-    background-color: #080808;
-    background-image: url('/app/static/ghost_rider_flames_animated_5s.gif');
-    background-size: cover;
-    background-position: center top;
-    background-repeat: no-repeat;
+  html, body {
+    background-color: #080808 !important;
+    background-image: url('/app/static/ghost_rider_flames_animated_5s.gif') !important;
+    background-size: 100% auto !important;   /* fill full width, height proportional */
+    background-position: top center !important;
+    background-repeat: no-repeat !important;
+    background-attachment: scroll !important;
   }
-  /* Gradient overlay: 50% transparent at top → fully opaque at 85% */
+  /* Gradient overlay: 50% transparent at top fades to fully opaque at 85% */
   .stApp {
-    background: linear-gradient(to bottom,
+    background-color: transparent !important;   /* must be transparent so body GIF shows */
+    background-image: linear-gradient(to bottom,
       rgba(8,8,8,0.50) 0%,
       rgba(8,8,8,0.50) 50%,
       rgba(8,8,8,0.88) 72%,
@@ -47,14 +50,23 @@ st.markdown("""
   }
   h1, h2, h3 { color: #00D4FF !important; letter-spacing: 0.04em; }
 
-  /* ── Responsive layout ───────────────────────────────────────────── */
-  .main .block-container {
+  /* ── Responsive layout / centering ──────────────────────────────── */
+  /* Target both Streamlit selector variants for robustness */
+  .main .block-container,
+  [data-testid="stAppViewBlockContainer"],
+  .block-container {
     max-width: 880px !important;
-    margin: 0 auto !important;
+    width: 100% !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
     padding: 1rem 1.5rem 2rem !important;
+    box-sizing: border-box !important;
   }
+  .main { padding-left: 0 !important; padding-right: 0 !important; }
   @media (max-width: 768px) {
-    .main .block-container {
+    .main .block-container,
+    [data-testid="stAppViewBlockContainer"],
+    .block-container {
       max-width: 100% !important;
       padding: 0.75rem 0.5rem 2rem !important;
     }
@@ -170,18 +182,18 @@ st.markdown("""
     padding: 0 !important;
     line-height: 1 !important;
     color: inherit !important;
-    font-size: inherit !important;
+    font-size: 2.8rem !important;   /* explicit — not inherit, Streamlit overrides that */
   }
   /* Label text below each circle via CSS ::after */
   [data-testid="stTabs"] [role="tab"]::after {
     position: absolute !important;
-    bottom: -22px !important;
+    bottom: -24px !important;
     left: 50% !important;
     transform: translateX(-50%) !important;
-    font-size: 0.58rem !important;
+    font-size: 1rem !important;     /* was 0.58rem — 1.75x bigger */
     font-family: monospace !important;
     letter-spacing: 0.1em !important;
-    color: #444 !important;
+    color: #555 !important;
     white-space: nowrap !important;
   }
   [data-testid="stTabs"] [role="tab"]:nth-child(1)::after { content: "SEARCH" !important; }
@@ -207,20 +219,22 @@ st.markdown("""
     border-bottom: 1.5px solid #FF6A00 !important;
     padding-bottom: 1px !important;
   }
-  /* Mobile: scale circles down so all 5 fit */
+  /* Mobile: scale circles to fit 5 across — still clearly readable */
   @media (max-width: 500px) {
-    [data-testid="stTabs"] [role="tablist"] { gap: 8px !important; padding-bottom: 28px !important; }
+    [data-testid="stTabs"] [role="tablist"] { gap: 8px !important; padding-bottom: 32px !important; }
     [data-testid="stTabs"] [role="tab"] {
       width: 60px !important;
       min-width: 60px !important;
       max-width: 60px !important;
       height: 60px !important;
-      font-size: 1.8rem !important;
       border-width: 2.5px !important;
     }
+    [data-testid="stTabs"] [role="tab"] p {
+      font-size: 2.2rem !important;   /* 1.75x scale vs original */
+    }
     [data-testid="stTabs"] [role="tab"]::after {
-      font-size: 0.5rem !important;
-      bottom: -18px !important;
+      font-size: 0.85rem !important;  /* 1.75x vs old 0.5rem */
+      bottom: -20px !important;
     }
   }
 
@@ -251,9 +265,23 @@ if "splash_dismissed" not in st.session_state:
     st.session_state.splash_dismissed = False
 
 if not st.session_state.splash_dismissed:
-    # Flames GIF shows through via the body/gradient CSS already in place.
-    # Glass card floats on top; smooth GIF served via Streamlit static files.
-    st.markdown("""
+    # Embed smooth GIF as base64 — reliable, no dependency on static serving URL.
+    if SMOOTH_GIF_PATH.exists():
+        _s_b64 = base64.b64encode(SMOOTH_GIF_PATH.read_bytes()).decode()
+        _splash_src = f"data:image/gif;base64,{_s_b64}"
+    elif LOGO_PATH.exists():
+        _s_b64 = base64.b64encode(LOGO_PATH.read_bytes()).decode()
+        _splash_src = f"data:image/png;base64,{_s_b64}"
+    else:
+        _splash_src = ""
+
+    _splash_img = (
+        f'<img src="{_splash_src}" style="width:100%; border-radius:16px; display:block;">'
+        if _splash_src else
+        "<p style='color:#FF6A00; font-size:2rem; font-weight:900;'>👻 GHOST RIDER</p>"
+    )
+
+    st.markdown(f"""
     <div style="min-height:70vh; display:flex; flex-direction:column;
                 align-items:center; justify-content:center; padding:2rem 1rem;">
       <div style="max-width:460px; width:100%;
@@ -266,8 +294,7 @@ if not st.session_state.splash_dismissed:
         box-shadow:0 24px 56px rgba(0,0,0,0.75),0 8px 20px rgba(0,0,0,0.5),
           inset 0 1px 0 rgba(255,255,255,0.12),0 0 80px rgba(255,100,0,0.12);
         padding:1.75rem 1.75rem 1.25rem; text-align:center;">
-        <img src="/app/static/ghost_rider_smooth.gif"
-             style="width:100%; border-radius:16px; display:block;">
+        {_splash_img}
         <p style="color:#00D4FF; font-family:monospace; font-size:0.78rem;
                   letter-spacing:0.18em; margin:1rem 0 0.25rem;">
           1984 BUICK GRAND NATIONAL</p>

@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ghost Rider — Tab Icon Preview</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #080808;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-family: monospace;
+      gap: 3rem;
+      padding: 2rem;
+    }
+
+    h2 {
+      color: #00D4FF;
+      font-size: 0.75rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+    }
+
+    .row-label {
+      color: #444;
+      font-size: 0.6rem;
+      letter-spacing: 0.15em;
+      margin-bottom: 0.5rem;
+      text-align: center;
+    }
+
+    /* ── Tab row ─────────────────────────────────────── */
+    .tablist {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      border-bottom: 1px solid #1e1e1e;
+      padding: 4px 20px 36px;
+    }
+
+    .tab {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: #282828;
+      border: 3px solid #363636;
+      color: #bbb;
+      font-size: 2.4rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: all 0.18s ease;
+      user-select: none;
+    }
+
+    /* Label text below each circle */
+    .tab::after {
+      position: absolute;
+      bottom: -24px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 0.58rem;
+      font-family: monospace;
+      letter-spacing: 0.1em;
+      color: #444;
+      white-space: nowrap;
+    }
+    .tab:nth-child(1)::after { content: "SEARCH"; }
+    .tab:nth-child(2)::after { content: "DIAGRAMS"; }
+    .tab:nth-child(3)::after { content: "SPECS"; }
+    .tab:nth-child(4)::after { content: "CODES"; }
+    .tab:nth-child(5)::after { content: "TSBs"; }
+
+    .tab:hover:not(.active) {
+      border-color: #FF6A00;
+      background: #2a1500;
+    }
+
+    .tab.active {
+      background: #FF6A00;
+      border-color: #FF8C00;
+      color: #FFF;
+      box-shadow: 0 0 30px #FF6A0088, 0 4px 18px rgba(0,0,0,0.65);
+    }
+    .tab.active::after {
+      color: #FF6A00;
+      border-bottom: 1.5px solid #FF6A00;
+      padding-bottom: 1px;
+    }
+
+    /* ── Sizing comparison grid ──────────────────────── */
+    .sizes {
+      display: flex;
+      gap: 24px;
+      align-items: flex-end;
+      justify-content: center;
+    }
+    .size-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+    .size-item span {
+      color: #444;
+      font-size: 0.55rem;
+      letter-spacing: 0.08em;
+    }
+    .circle {
+      border-radius: 50%;
+      background: #FF6A00;
+      border: 3px solid #FF8C00;
+      color: #FFF;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 20px #FF6A0066;
+    }
+    .c80  { width: 80px;  height: 80px;  font-size: 2.4rem; }
+    .c60  { width: 60px;  height: 60px;  font-size: 1.8rem; }
+    .c48  { width: 48px;  height: 48px;  font-size: 1.4rem; }
+
+    footer {
+      color: #2a2a2a;
+      font-size: 0.6rem;
+      letter-spacing: 0.12em;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>Ghost Rider — Sweettart Tab Preview</h2>
+
+  <!-- Full tab row -->
+  <div>
+    <p class="row-label">full tab row · click to toggle active</p>
+    <div class="tablist" id="tablist">
+      <div class="tab active" onclick="activate(this)">🔍</div>
+      <div class="tab" onclick="activate(this)">📐</div>
+      <div class="tab" onclick="activate(this)">📋</div>
+      <div class="tab" onclick="activate(this)">⚠️</div>
+      <div class="tab" onclick="activate(this)">📣</div>
+    </div>
+  </div>
+
+  <!-- Size comparison -->
+  <div>
+    <p class="row-label">size comparison — 80 · 60 · 48 px</p>
+    <div class="sizes">
+      <div class="size-item">
+        <div class="circle c80">🔍</div>
+        <span>80px desktop</span>
+      </div>
+      <div class="size-item">
+        <div class="circle c60">🔍</div>
+        <span>60px mobile</span>
+      </div>
+      <div class="size-item">
+        <div class="circle c48">🔍</div>
+        <span>48px small</span>
+      </div>
+    </div>
+  </div>
+
+  <footer>1984 BUICK GRAND NATIONAL · GHOST RIDER · TAB PREVIEW</footer>
+
+  <script>
+    function activate(el) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      el.classList.add('active');
+    }
+  </script>
+</body>
+</html>

@@ -3,5 +3,3 @@ requests>=2.32
 beautifulsoup4>=4.12
 lxml>=5.2
 scikit-learn>=1.4
-pandas>=2.2
-PyYAML>=6.0

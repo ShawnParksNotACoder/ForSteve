@@ -95,24 +95,26 @@ st.markdown("""
   }
   [data-testid="stExpander"] details summary::-webkit-details-marker { display: none !important; }
   [data-testid="stExpander"] details summary::marker { display: none !important; content: "" !important; }
+  /* ── Quick Diag expander (Search tab only) ──────────────────────── */
   /* Hide ALL real children — the full row lives in ::before */
-  [data-testid="stExpander"] details summary > * { display: none !important; }
-  /* Full centered row: flips ▼↔▲ with [open] */
-  [data-testid="stExpander"] details:not([open]) summary::before {
-    content: "▼  ⚡  Quick Diagnostic Searches  ⚡  ▼" !important;
+  #quick-diag [data-testid="stExpander"] details summary > * { display: none !important; }
+  /* Closed state */
+  #quick-diag [data-testid="stExpander"] details:not([open]) summary::before {
+    content: "▼  ⚡  Quick Diag. Searches  ⚡  ▼" !important;
     color: #00D4FF !important;
     font-family: monospace !important;
     font-size: 0.9rem !important;
     letter-spacing: 0.12em !important;
   }
-  [data-testid="stExpander"] details[open] summary::before {
-    content: "▲  ⚡  Quick Diagnostic Searches  ⚡  ▲" !important;
+  /* Open state */
+  #quick-diag [data-testid="stExpander"] details[open] summary::before {
+    content: "▲  ⚡  Quick Diag. Searches  ⚡  ▲" !important;
     color: #00D4FF !important;
     font-family: monospace !important;
     font-size: 0.9rem !important;
     letter-spacing: 0.12em !important;
   }
-  [data-testid="stExpander"] details summary::after { content: "" !important; }
+  #quick-diag [data-testid="stExpander"] details summary::after { content: "" !important; }
 
   /* ── Text inputs ─────────────────────────────────────────────────── */
   .stTextInput > div > div > input {
@@ -155,9 +157,12 @@ st.markdown("""
     color: #080808 !important;
     border-color: #FF6A00 !important;
   }
-  /* Hide radio circles — native input hidden; Streamlit's SVG indicator hidden */
+  /* Hide radio circles — input, SVG indicator, li bullet, div indicator */
   [data-testid="stRadio"] input[type="radio"] { display: none !important; }
   [data-testid="stRadio"] label svg { display: none !important; }
+  [data-testid="stRadio"] li { list-style: none !important; }
+  [data-testid="stRadio"] li::marker { display: none !important; content: "" !important; }
+  [data-testid="stRadio"] label > div:not(:has(p)) { display: none !important; }
 
   /* ── Sweettart round nav tabs ────────────────────────────────────── */
   [data-testid="stTabs"] { overflow: visible !important; }
@@ -552,11 +557,13 @@ tab_search, tab_diagrams, tab_specs, tab_codes, tab_tsbs = st.tabs([
 # SEARCH TAB
 # ════════════════════════════════════════════════════════════════════════════
 with tab_search:
+    st.markdown('<div id="quick-diag">', unsafe_allow_html=True)
     with st.expander(" ", expanded=False):
         cols = st.columns(2)
         for i, (label, term) in enumerate(QUICK_QUERIES):
             if cols[i % 2].button(label, key=f"quick_{i}", use_container_width=True):
                 st.session_state["_query"] = term
+    st.markdown('</div>', unsafe_allow_html=True)
 
     default_query = st.session_state.pop("_query", "")
     query = st.text_input(

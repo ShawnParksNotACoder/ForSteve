@@ -29,8 +29,12 @@ st.set_page_config(
 st.markdown("""
 <style>
   /* ── App base — animated flame background ────────────────────────── */
-  /* Put GIF + gradient both on .stApp so inner containers can't cover it */
-  .stApp {
+  html, body { background-color: #080808 !important; }
+  /* Fixed pseudo-element sits below everything, visible through transparent containers */
+  body::before {
+    content: "" !important;
+    position: fixed !important;
+    inset: 0 !important;
     background-image:
       linear-gradient(to bottom,
         rgba(8,8,8,0.50) 0%,
@@ -42,10 +46,11 @@ st.markdown("""
     background-size: cover, 100% auto !important;
     background-position: top center, top center !important;
     background-repeat: no-repeat, no-repeat !important;
-    background-color: #080808 !important;
-    min-height: 100vh !important;
+    z-index: -1 !important;
+    pointer-events: none !important;
   }
-  /* Inner containers must be transparent so the .stApp background shows */
+  /* Every Streamlit layer must be transparent or the GIF is hidden */
+  .stApp,
   [data-testid="stAppViewContainer"],
   [data-testid="stMain"],
   section.main {
@@ -66,10 +71,6 @@ st.markdown("""
     }
   }
 
-  /* ── Search input — center placeholder text ─────────────────────── */
-  .stTextInput > div > div > input {
-    text-align: center !important;
-  }
 
   /* ── Cards / containers ──────────────────────────────────────────── */
   [data-testid="stVerticalBlockBorderWrapper"] {
@@ -97,37 +98,52 @@ st.markdown("""
   }
 
   /* ── Expanders ───────────────────────────────────────────────────── */
-  details > summary { color: #00D4FF !important; font-size: 0.85rem; }
   [data-testid="stExpander"] {
     border: 1px solid #00D4FF1A !important;
     border-radius: 14px !important;
     overflow: hidden;
   }
-  /* Center the header row; hide default chevron SVG */
+  /* Summary row: flex, centered, remove default marker */
   [data-testid="stExpander"] details summary {
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
+    gap: 0.8rem !important;
     list-style: none !important;
-    gap: 0.4rem !important;
+    cursor: pointer !important;
   }
   [data-testid="stExpander"] details summary::-webkit-details-marker { display: none !important; }
+  /* Hide Streamlit's default chevron — target both the SVG and its wrapping div */
   [data-testid="stExpander"] details summary svg { display: none !important; }
-  [data-testid="stExpander"] details summary > div {
-    justify-content: center !important;
+  [data-testid="stExpander"] details summary > div:last-child { display: none !important; }
+  /* Text div: don't stretch, center its text */
+  [data-testid="stExpander"] details summary > div:first-child {
+    flex: 0 0 auto !important;
+    text-align: center !important;
+    color: #00D4FF !important;
+    font-size: 0.85rem !important;
   }
-  /* Flip triangles via [open] attribute */
-  [data-testid="stExpander"] details:not([open]) summary::before {
-    content: "▼" !important; color: #FF6A00 !important; font-size: 0.7rem !important;
+  [data-testid="stExpander"] details summary p {
+    color: #00D4FF !important;
+    text-align: center !important;
+    margin: 0 !important;
   }
-  [data-testid="stExpander"] details[open] summary::before {
-    content: "▲" !important; color: #FF6A00 !important; font-size: 0.7rem !important;
-  }
+  /* Flip triangles: ::before/::after become flex items flanking the text div */
+  [data-testid="stExpander"] details:not([open]) summary::before,
   [data-testid="stExpander"] details:not([open]) summary::after {
-    content: "▼" !important; color: #FF6A00 !important; font-size: 0.7rem !important;
+    content: "▼" !important;
+    color: #00D4FF !important;
+    font-size: 1.4rem !important;
+    line-height: 1 !important;
+    flex-shrink: 0 !important;
   }
+  [data-testid="stExpander"] details[open] summary::before,
   [data-testid="stExpander"] details[open] summary::after {
-    content: "▲" !important; color: #FF6A00 !important; font-size: 0.7rem !important;
+    content: "▲" !important;
+    color: #00D4FF !important;
+    font-size: 1.4rem !important;
+    line-height: 1 !important;
+    flex-shrink: 0 !important;
   }
 
   /* ── Text inputs ─────────────────────────────────────────────────── */
@@ -137,6 +153,7 @@ st.markdown("""
     color: #E8E8E8 !important;
     border-radius: 12px !important;
     padding: 0.5rem 1rem !important;
+    text-align: center !important;
   }
   .stTextInput > div > div > input:focus {
     border-color: #FF6A00 !important;
@@ -576,18 +593,20 @@ with tab_search:
         label_visibility="collapsed",
     )
 
-    # System filter pills with label
+    # System filter pills with label — columns force reliable centering
     st.markdown(
         "<p style='color:#888; font-size:0.75rem; font-family:monospace;"
         " letter-spacing:0.1em; margin-bottom:0.2rem; text-align:center;'>FILTER:</p>",
         unsafe_allow_html=True,
     )
-    selected_filter = st.pills(
-        "Filter",
-        options=SYSTEM_FILTER_LABELS,
-        default="All",
-        label_visibility="collapsed",
-    )
+    _pl, _pm, _pr = st.columns([1, 6, 1])
+    with _pm:
+        selected_filter = st.pills(
+            "Filter",
+            options=SYSTEM_FILTER_LABELS,
+            default="All",
+            label_visibility="collapsed",
+        )
     system_filter = SYSTEM_FILTER_MAP.get(selected_filter)
 
     st.markdown("---")

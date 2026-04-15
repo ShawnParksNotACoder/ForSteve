@@ -17,7 +17,6 @@ ALIASES_PATH = KB_DIR / "aliases.json"
 IMAGES_DIR = KB_DIR / "images" / "DM14Q313" / "gm100"
 LOGO_PATH      = BASE_DIR / "assets" / "ghost_rider.png"
 SMOOTH_GIF_PATH = BASE_DIR / "static" / "ghost_rider_smooth.gif"
-BG_GIF_PATH    = BASE_DIR / "static" / "ghost_rider_flames_bg.gif"
 
 st.set_page_config(
     page_title="Ghost Rider — GN Shop Manual",
@@ -26,43 +25,11 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
-# ── Background GIF — base64 data URI (no static-serving dependency) ───────────
-_bg_url = "/app/static/ghost_rider_flames_bg.gif"   # fallback if file missing
-if BG_GIF_PATH.exists():
-    _bg_b64 = base64.b64encode(BG_GIF_PATH.read_bytes()).decode()
-    _bg_url = f"data:image/gif;base64,{_bg_b64}"
-
-st.markdown(f"""<style>
-body::before {{
-  content: "" !important;
-  position: fixed !important;
-  inset: 0 !important;
-  background-image:
-    linear-gradient(to bottom,
-      rgba(8,8,8,0.50) 0%, rgba(8,8,8,0.50) 50%,
-      rgba(8,8,8,0.88) 72%, rgba(8,8,8,1.00) 85%
-    ),
-    url('{_bg_url}') !important;
-  background-size: cover, 100% auto !important;
-  background-position: top center, top center !important;
-  background-repeat: no-repeat, no-repeat !important;
-  z-index: -1 !important;
-  pointer-events: none !important;
-}}
-</style>""", unsafe_allow_html=True)
-
 # ── Global CSS ────────────────────────────────────────────────────────────────
 st.markdown("""
 <style>
   /* ── App base ─────────────────────────────────────────────────────── */
   html, body { background-color: #080808 !important; }
-  /* Every Streamlit layer must be transparent so the body::before GIF shows */
-  .stApp,
-  [data-testid="stAppViewContainer"],
-  [data-testid="stMain"],
-  section.main {
-    background: transparent !important;
-  }
   h1, h2, h3 { color: #00D4FF !important; letter-spacing: 0.04em; }
 
   /* ── Responsive layout — centered layout, widened ───────────────── */
@@ -108,53 +75,40 @@ st.markdown("""
   }
 
   /* ── Expanders ───────────────────────────────────────────────────── */
+  /* ── Expanders ───────────────────────────────────────────────────── */
   [data-testid="stExpander"] {
     border: 1px solid #00D4FF1A !important;
     border-radius: 14px !important;
     overflow: hidden;
   }
-  /* Summary row: flex, centered, remove default marker */
   [data-testid="stExpander"] details summary {
     display: flex !important;
-    align-items: center !important;
     justify-content: center !important;
-    gap: 0.8rem !important;
-    list-style: none !important;
+    align-items: center !important;
     cursor: pointer !important;
+    list-style: none !important;
+    padding: 0.75rem 1rem !important;
   }
   [data-testid="stExpander"] details summary::-webkit-details-marker { display: none !important; }
   [data-testid="stExpander"] details summary::marker { display: none !important; content: "" !important; }
-  /* Kill EVERY direct child except the first (text) div — removes native marker + Streamlit chevron div */
-  [data-testid="stExpander"] details summary > *:not(:first-child) { display: none !important; }
-  /* Text div: don't stretch, center its text */
-  [data-testid="stExpander"] details summary > div:first-child {
-    flex: 0 0 auto !important;
-    text-align: center !important;
+  /* Hide ALL real children — the full row lives in ::before */
+  [data-testid="stExpander"] details summary > * { display: none !important; }
+  /* Full centered row: flips ▼↔▲ with [open] */
+  [data-testid="stExpander"] details:not([open]) summary::before {
+    content: "▼  ⚡  QUICK DIAGNOSTIC SEARCHES  ⚡  ▼" !important;
     color: #00D4FF !important;
-    font-size: 0.85rem !important;
+    font-family: monospace !important;
+    font-size: 0.9rem !important;
+    letter-spacing: 0.12em !important;
   }
-  [data-testid="stExpander"] details summary p {
+  [data-testid="stExpander"] details[open] summary::before {
+    content: "▲  ⚡  QUICK DIAGNOSTIC SEARCHES  ⚡  ▲" !important;
     color: #00D4FF !important;
-    text-align: center !important;
-    margin: 0 !important;
+    font-family: monospace !important;
+    font-size: 0.9rem !important;
+    letter-spacing: 0.12em !important;
   }
-  /* Flip triangles: ::before/::after become flex items flanking the text div */
-  [data-testid="stExpander"] details:not([open]) summary::before,
-  [data-testid="stExpander"] details:not([open]) summary::after {
-    content: "▼" !important;
-    color: #00D4FF !important;
-    font-size: 1.4rem !important;
-    line-height: 1 !important;
-    flex-shrink: 0 !important;
-  }
-  [data-testid="stExpander"] details[open] summary::before,
-  [data-testid="stExpander"] details[open] summary::after {
-    content: "▲" !important;
-    color: #00D4FF !important;
-    font-size: 1.4rem !important;
-    line-height: 1 !important;
-    flex-shrink: 0 !important;
-  }
+  [data-testid="stExpander"] details summary::after { content: "" !important; }
 
   /* ── Text inputs ─────────────────────────────────────────────────── */
   .stTextInput > div > div > input {
@@ -170,34 +124,35 @@ st.markdown("""
     box-shadow: 0 0 12px #FF6A0033 !important;
   }
 
-  /* ── Pills / filter chips — centered, wrapping ───────────────────── */
-  /* Outer block with text-align:center so the inline-flex inner div centers itself */
-  [data-testid="stPills"] {
-    display: block !important;
-    text-align: center !important;
-    width: 100% !important;
+  /* ── Filter row — st.radio styled as centered pills ─────────────── */
+  [data-testid="stRadio"] {
+    display: flex !important;
+    justify-content: center !important;
   }
-  [data-testid="stPills"] > div {
-    display: inline-flex !important;
+  [data-testid="stRadio"] > div {
+    display: flex !important;
     flex-wrap: wrap !important;
     justify-content: center !important;
     gap: 6px !important;
-    max-width: 100% !important;
-    text-align: left !important;   /* reset so button text isn't affected */
   }
-  [data-testid="stPills"] button {
+  [data-testid="stRadio"] label {
     border-radius: 20px !important;
     border: 1px solid #FF6A0055 !important;
     background: #141414 !important;
     color: #E8E8E8 !important;
     font-size: 0.8rem !important;
+    padding: 0.3rem 0.9rem !important;
+    cursor: pointer !important;
+    margin: 0 !important;
     white-space: nowrap !important;
   }
-  [data-testid="stPills"] button[aria-selected="true"] {
+  [data-testid="stRadio"] label:has(input:checked) {
     background: #FF6A00 !important;
     color: #080808 !important;
     border-color: #FF6A00 !important;
   }
+  /* Hide the actual radio circles */
+  [data-testid="stRadio"] input[type="radio"] { display: none !important; }
 
   /* ── Sweettart round nav tabs ────────────────────────────────────── */
   [data-testid="stTabs"] { overflow: visible !important; }
@@ -592,7 +547,7 @@ tab_search, tab_diagrams, tab_specs, tab_codes, tab_tsbs = st.tabs([
 # SEARCH TAB
 # ════════════════════════════════════════════════════════════════════════════
 with tab_search:
-    with st.expander("⚡  QUICK DIAGNOSTIC SEARCHES  ⚡", expanded=False):
+    with st.expander(" ", expanded=False):
         cols = st.columns(2)
         for i, (label, term) in enumerate(QUICK_QUERIES):
             if cols[i % 2].button(label, key=f"quick_{i}", use_container_width=True):
@@ -606,16 +561,17 @@ with tab_search:
         label_visibility="collapsed",
     )
 
-    # System filter pills with label — columns force reliable centering
+    # Filter row — st.radio styled as centered pill buttons via CSS
     st.markdown(
         "<p style='color:#888; font-size:0.75rem; font-family:monospace;"
         " letter-spacing:0.1em; margin-bottom:0.2rem; text-align:center;'>FILTER:</p>",
         unsafe_allow_html=True,
     )
-    selected_filter = st.pills(
+    selected_filter = st.radio(
         "Filter",
         options=SYSTEM_FILTER_LABELS,
-        default="All",
+        index=0,
+        horizontal=True,
         label_visibility="collapsed",
     )
     system_filter = SYSTEM_FILTER_MAP.get(selected_filter)

@@ -35,16 +35,16 @@ st.markdown("""
   /* ── Responsive layout — centered layout, widened ───────────────── */
   div.block-container {
     max-width: 900px !important;
-    padding: 0.5rem 2rem 3rem !important;   /* was 1rem top — halved */
+    padding: 2rem 2rem 3rem !important;   /* increased top so header clears Streamlit toolbar */
   }
   /* Gap below tab indicator line, above first tab content element */
-  [role="tabpanel"] { padding: 1.2rem 0 0 !important; }
-  /* Shrink hr margins so header→tabs and pills→description gaps are tighter */
-  hr { margin: 0.25rem 0 !important; border-color: #1c1c1c !important; }
+  [role="tabpanel"] { padding: 1.8rem 0 0 !important; }
+  /* hr margins: tight enough to not waste space but visible */
+  hr { margin: 0.75rem 0 !important; border-color: #1c1c1c !important; }
   @media (max-width: 768px) {
     div.block-container {
       max-width: 100% !important;
-      padding: 0.4rem 0.75rem 2rem !important;   /* was 0.75rem top — halved */
+      padding: 2rem 0.75rem 2rem !important;
     }
   }
 
@@ -74,7 +74,11 @@ st.markdown("""
     box-shadow: 0 0 18px #FF6A0055 !important;
   }
 
-  /* ── Expanders ───────────────────────────────────────────────────── */
+  /* ── Element spacing — consistent ~10px gaps between search-tab items ── */
+  [data-testid="stExpander"]       { margin-bottom: 0.75rem !important; }
+  [data-testid="stTextInput"]      { margin-bottom: 0.5rem  !important; }
+  [data-testid="stRadio"]          { margin-bottom: 0.25rem !important; }
+
   /* ── Expanders ───────────────────────────────────────────────────── */
   [data-testid="stExpander"] {
     border: 1px solid #00D4FF1A !important;
@@ -151,8 +155,12 @@ st.markdown("""
     color: #080808 !important;
     border-color: #FF6A00 !important;
   }
-  /* Hide the actual radio circles */
+  /* Hide radio circles — both the input and Streamlit's custom indicator div */
   [data-testid="stRadio"] input[type="radio"] { display: none !important; }
+  [data-testid="stRadio"] label > div { display: none !important; }
+  [data-testid="stRadio"] label > span { display: none !important; }
+  /* Ensure label text (p tag) stays visible */
+  [data-testid="stRadio"] label p { display: block !important; }
 
   /* ── Sweettart round nav tabs ────────────────────────────────────── */
   [data-testid="stTabs"] { overflow: visible !important; }
@@ -641,13 +649,14 @@ with tab_search:
 
     else:
         st.markdown(
-            "<p style='color:#888; font-size:0.85rem; text-align:center;'>"
+            "<p style='color:#888; font-size:0.85rem; text-align:center;"
+            " margin-bottom:0.75rem;'>"
             "Full repair reference for the Grand National platform. Search above "
             "or tap a shortcut below.</p>",
             unsafe_allow_html=True,
         )
         st.markdown(
-            "<h4 style='text-align:center;'>Popular searches</h4>",
+            "<h4 style='text-align:center; margin-top:0.75rem;'>Popular searches</h4>",
             unsafe_allow_html=True,
         )
         col1, col2 = st.columns(2)

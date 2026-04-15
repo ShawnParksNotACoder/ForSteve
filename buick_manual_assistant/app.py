@@ -381,7 +381,7 @@ def extract_image_paths(text: str) -> list[Path]:
 
 # ── Knowledge base ────────────────────────────────────────────────────────────
 
-@st.cache_resource(show_spinner="Loading shop manual…")
+@st.cache_resource(show_spinner=False)
 def load_knowledge_base():
     with open(DOCS_PATH, encoding="utf-8") as f:
         raw_docs = [json.loads(line) for line in f]
@@ -500,7 +500,60 @@ POPULAR = [
 
 
 # ── Load ──────────────────────────────────────────────────────────────────────
+_loading = st.empty()
+_loading.markdown("""
+<div style="
+  position:fixed; inset:0;
+  display:flex; align-items:center; justify-content:center;
+  background:rgba(8,8,8,0.97);
+  z-index:9999;
+">
+  <div style="
+    background:#111111;
+    border:1px solid #00D4FF33;
+    border-radius:24px;
+    padding:2.5rem 3rem;
+    text-align:center;
+    box-shadow:0 0 60px rgba(0,212,255,0.12);
+    min-width:200px;
+  ">
+    <style>
+      @keyframes bolt-draw {
+        0%   { stroke-dashoffset:300; opacity:0.15; }
+        40%  { stroke-dashoffset:0;   opacity:1;    }
+        60%  { stroke-dashoffset:0;   opacity:1;    }
+        100% { stroke-dashoffset:-300; opacity:0.15; }
+      }
+      @keyframes bolt-glow {
+        0%,100% { filter:drop-shadow(0 0 4px #FFE600) drop-shadow(0 0 8px #FFE60055); }
+        50%     { filter:drop-shadow(0 0 12px #FFE600) drop-shadow(0 0 28px #FFE60099); }
+      }
+      .gr-bolt { animation:bolt-glow 2s ease-in-out infinite; }
+      .gr-bolt-path {
+        stroke-dasharray:300;
+        stroke-dashoffset:300;
+        animation:bolt-draw 2s ease-in-out infinite;
+      }
+    </style>
+    <svg class="gr-bolt" width="72" height="104" viewBox="0 0 72 104" fill="none">
+      <polyline class="gr-bolt-path"
+        points="50,4 24,54 40,54 22,100 56,46 38,46"
+        stroke="#FFE600" stroke-width="2.5"
+        stroke-linejoin="round" stroke-linecap="round"/>
+    </svg>
+    <div style="
+      color:#00D4FF;
+      font-family:monospace;
+      font-size:1rem;
+      letter-spacing:0.2em;
+      margin-top:1.5rem;
+      line-height:2.4;
+    ">LOADING<br>SHOP<br>MANUAL</div>
+  </div>
+</div>
+""", unsafe_allow_html=True)
 records, vec, matrix, aliases = load_knowledge_base()
+_loading.empty()
 
 
 # ── Sidebar ───────────────────────────────────────────────────────────────────

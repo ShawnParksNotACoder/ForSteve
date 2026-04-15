@@ -42,7 +42,7 @@ st.markdown("""
         rgba(8,8,8,0.88) 72%,
         rgba(8,8,8,1.00) 85%
       ),
-      url('/app/static/ghost_rider_flames_animated_5s.gif') !important;
+      url('/app/static/ghost_rider_flames_bg.gif') !important;
     background-size: cover, 100% auto !important;
     background-position: top center, top center !important;
     background-repeat: no-repeat, no-repeat !important;

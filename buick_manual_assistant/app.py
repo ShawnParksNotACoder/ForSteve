@@ -155,9 +155,9 @@ st.markdown("""
     color: #080808 !important;
     border-color: #FF6A00 !important;
   }
-  /* Hide radio circles — input + Streamlit's indicator (element immediately after input) */
+  /* Hide radio circles — native input hidden; Streamlit's SVG indicator hidden */
   [data-testid="stRadio"] input[type="radio"] { display: none !important; }
-  [data-testid="stRadio"] input[type="radio"] + * { display: none !important; }
+  [data-testid="stRadio"] label svg { display: none !important; }
 
   /* ── Sweettart round nav tabs ────────────────────────────────────── */
   [data-testid="stTabs"] { overflow: visible !important; }

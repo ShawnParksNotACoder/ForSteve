@@ -99,14 +99,14 @@ st.markdown("""
   [data-testid="stExpander"] details summary > * { display: none !important; }
   /* Full centered row: flips ▼↔▲ with [open] */
   [data-testid="stExpander"] details:not([open]) summary::before {
-    content: "▼  ⚡  QUICK DIAGNOSTIC SEARCHES  ⚡  ▼" !important;
+    content: "▼  ⚡  Quick Diagnostic Searches  ⚡  ▼" !important;
     color: #00D4FF !important;
     font-family: monospace !important;
     font-size: 0.9rem !important;
     letter-spacing: 0.12em !important;
   }
   [data-testid="stExpander"] details[open] summary::before {
-    content: "▲  ⚡  QUICK DIAGNOSTIC SEARCHES  ⚡  ▲" !important;
+    content: "▲  ⚡  Quick Diagnostic Searches  ⚡  ▲" !important;
     color: #00D4FF !important;
     font-family: monospace !important;
     font-size: 0.9rem !important;
@@ -155,12 +155,9 @@ st.markdown("""
     color: #080808 !important;
     border-color: #FF6A00 !important;
   }
-  /* Hide radio circles — both the input and Streamlit's custom indicator div */
+  /* Hide radio circles — input + Streamlit's indicator (element immediately after input) */
   [data-testid="stRadio"] input[type="radio"] { display: none !important; }
-  [data-testid="stRadio"] label > div { display: none !important; }
-  [data-testid="stRadio"] label > span { display: none !important; }
-  /* Ensure label text (p tag) stays visible */
-  [data-testid="stRadio"] label p { display: block !important; }
+  [data-testid="stRadio"] input[type="radio"] + * { display: none !important; }
 
   /* ── Sweettart round nav tabs ────────────────────────────────────── */
   [data-testid="stTabs"] { overflow: visible !important; }
